@@ -13,9 +13,10 @@ from cicloapi.schemas.user_schema import UserInDB
 from cicloapi.schemas.token_schema import Token, TokenData
 from cicloapi.core.config import settings
 import jwt
-
+import logging
 
 router = APIRouter()
+logger = logging.getLogger('uvicorn.error')
 
 # Creates a Bearer scheme for authentication with OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes=settings.SCOPES)
@@ -39,7 +40,7 @@ def create_token(data: dict, expiration: timedelta | None = None) -> str:
     """
 
     to_encode = data.copy()
-
+    logger.info(settings.SECRET_KEY)
     if expiration:
         exp = datetime.now(timezone.utc) + expiration
     else:
@@ -49,6 +50,7 @@ def create_token(data: dict, expiration: timedelta | None = None) -> str:
     encoded_token = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
+    logger.info(encoded_token)
     return encoded_token
 
 

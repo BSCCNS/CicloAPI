@@ -12,8 +12,8 @@ BASE_DIR = Path.cwd()
 ENV_PATH = BASE_DIR / ".env"
 
 def generate_secret_key():
-    """Generates a 32-character hexadecimal secret key."""
-    return secrets.token_hex(32)
+    """Generates a 32-character (16-bit) secret key."""
+    return secrets.token_hex(16)
 
 def generate_env_variable():
     """Generates a random SECRET_KEY and saves it if not already set."""
