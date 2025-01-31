@@ -38,7 +38,7 @@ package-dir = {"" = "src"}
 
 [project.scripts]
 post_install = "cicloapi.install_hook:generate_env_variable"
-cicloapi = "cicloapi.__init__:main"
+cicloapi = "cicloapi.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
