@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12-slim
+FROM gboeing/osmnx
 
 # Set the working directory in the container
 WORKDIR /app
@@ -8,10 +8,9 @@ WORKDIR /app
 COPY dist/ .
 
 COPY src/cicloapi/data/users_db_fake.json /app/src/cicloapi/data/
-RUN chmod 644 /app/src/cicloapi/data/users_db_fake.json
 
 # Install the Python dependencies
-RUN pip install cicloapi-0.1-py3-none-any.whl
+RUN uv pip install cicloapi-0.2-py3-none-any.whl --system
 
 # Expose the port that the application will run on
 EXPOSE 8000

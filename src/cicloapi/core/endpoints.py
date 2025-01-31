@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 # Add the 'backend' directory to the module search path
-sys.path.append(str(Path(__file__).resolve().parents[3]))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
 from backend.models.scripts import path, prepare_networks, prepare_pois, cluster_pois, poi_based_generation

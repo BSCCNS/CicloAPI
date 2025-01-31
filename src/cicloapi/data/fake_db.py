@@ -2,6 +2,7 @@
 
 import json
 import os
+from pathlib import Path
 # Class that loads the fake user database (to be deprecated soon)
 
 
@@ -19,8 +20,8 @@ class Database:
             return json.loads(data)
 
 
-current_working_directory = os.getcwd()
-file_path = os.path.join(current_working_directory, 'src', 'cicloapi', 'data', 'users_db_fake.json')
+current_directory = Path(__file__).parent.resolve()
+file_path = current_directory /  'users_db_fake.json'
 db_ob = Database(file_path)
 
 users_db = db_ob.db
