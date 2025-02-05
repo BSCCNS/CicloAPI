@@ -1,7 +1,7 @@
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]  # This goes up two levels to the project root
-API_DIR = Path(__file__).resolve().parents[2]
+API_DIR = Path(__file__).resolve().parents[3]
 # Define paths dictionary relative to BASE_DIR
 PATH = {
     "parameters": BASE_DIR / "parameters",
@@ -16,6 +16,10 @@ PATH = {
     "logs": BASE_DIR / "bikenwgrowth_external" / "logs",
     "task_output": API_DIR / "data" / "endpoints"
 }
+
+for path in PATH.values():
+    path.mkdir(parents=True, exist_ok=True)
+
 # Example usage of a path
 #print("Current working directory:", Path.cwd())
 #print("Loaded PATH:", PATH)

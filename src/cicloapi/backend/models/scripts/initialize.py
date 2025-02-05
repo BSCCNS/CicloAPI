@@ -1,6 +1,6 @@
 #config
 from pathlib import Path
-from backend.models.scripts.path import PATH
+from cicloapi.backend.models.scripts.path import PATH
 debug = False
 
 # System

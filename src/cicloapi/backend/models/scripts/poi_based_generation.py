@@ -6,8 +6,8 @@ debug = False
 import logging
 
 # Local
-from backend.models.scripts.functions import csv_to_ig, write_result, mst_routing, greedy_triangulation_routing
-from backend.models.parameters.parameters import poi_source, prune_quantiles
+from cicloapi.backend.models.scripts.functions import csv_to_ig, write_result, mst_routing, greedy_triangulation_routing
+from cicloapi.backend.models.parameters.parameters import poi_source, prune_quantiles
 
 from pathlib import Path
 from typing import Dict, Union

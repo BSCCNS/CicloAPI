@@ -18,11 +18,11 @@ import sys
 from pathlib import Path
 
 # Add the 'backend' directory to the module search path
-sys.path.append(str(Path(__file__).resolve().parents[3]))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
-from backend.models.scripts import path, prepare_networks, prepare_pois, cluster_pois, poi_based_generation, analyze_results, real_city_metrics
-from backend.models.parameters.parameters import snapthreshold
+from cicloapi.backend.models.scripts import path, prepare_networks, prepare_pois, cluster_pois, poi_based_generation, analyze_results, real_city_metrics
+from cicloapi.backend.models.parameters.parameters import snapthreshold
 
 current_working_directory = os.getcwd()
 
@@ -61,7 +61,7 @@ async def check_tasks(token: Annotated[dict, Depends(check_token)]):
 
 # Endpoint to setup the city (download OSM data) 
 @router.post("/city_setup")
-async def city_setup(input: schemas.InputCity, token: Annotated[dict, Depends(check_token)]):
+async def city_setup(input: schemas.InputCity):
     '''
     Starts execution of a model task.
     Parameters:
@@ -72,7 +72,7 @@ async def city_setup(input: schemas.InputCity, token: Annotated[dict, Depends(ch
     '''
     #Check user
     
-    user = token['user']
+    #user = token['user']
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
 
@@ -95,7 +95,7 @@ async def city_setup(input: schemas.InputCity, token: Annotated[dict, Depends(ch
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(setup_task(task_id))
-    task_ob = schemas.ModelTask(task=task, user=user, start_time=time)
+    task_ob = schemas.ModelTask(task=task, user='user', start_time=time)
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
