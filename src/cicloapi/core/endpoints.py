@@ -75,7 +75,15 @@ async def city_setup(input: schemas.InputCity):
     #user = token['user']
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
-
+    
+    PATH = path.PATH
+    for subfolder in ["data", "plots", "plots_networks", "results", "exports", "exports_json", "videos"]:
+        for key in input.city.keys():
+            placepath = PATH[subfolder] / key  
+            placepath.mkdir(parents=True, exist_ok=True)  
+            print(f"Successfully created folder {placepath}")
+    
+    
     async def setup_task(task_id):
         try:
             # Extract parameters
