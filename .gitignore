@@ -2,5 +2,6 @@ __pycache__
 .venv
 .env
 src/cicloapi/backend/data/
-src/cicloapi/backend/bikenwgrowth_external/
+src/cicloapi/backend/models/bikenwgrowth_external/
 cache/
+src/cicloapi/data
