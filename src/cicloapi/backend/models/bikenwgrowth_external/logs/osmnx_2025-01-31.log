@@ -1,5 +1,0 @@
-2025-01-31 11:59:54,729 INFO OSMnx Pausing 1 second(s) before making HTTP GET request to 'nominatim.openstreetmap.org'
-2025-01-31 11:59:55,730 INFO OSMnx Get https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&dedupe=0&limit=50&q=Viladecans%2C+Barcelona%2C+Spain with timeout=300
-2025-01-31 11:59:56,064 INFO OSMnx Downloaded 13.0kB from 'nominatim.openstreetmap.org' with status 200
-2025-01-31 11:59:56,065 INFO OSMnx Saved response to cache file 'cache/bc1d17f0b99fa4c6c2ab0b67e2502731521d061a.json'
-2025-01-31 11:59:56,094 INFO OSMnx Created GeoDataFrame with 1 rows from 1 queries
