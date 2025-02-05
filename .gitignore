@@ -5,3 +5,4 @@ src/cicloapi/backend/data/
 src/cicloapi/backend/models/bikenwgrowth_external/
 cache/
 src/cicloapi/data
+.DS_Store
