@@ -6,3 +6,4 @@ src/cicloapi/backend/models/bikenwgrowth_external/
 cache/
 src/cicloapi/data/endpoints
 .DS_Store
+.vscode
