@@ -1,11 +1,9 @@
 # endpoints.py
 
-from typing import Annotated
-from fastapi import HTTPException, Depends, APIRouter
+from fastapi import HTTPException, APIRouter
 from cicloapi.schemas import schemas
 import asyncio
 import logging
-from cicloapi.auth.auth import check_token
 from fastapi.responses import FileResponse
 import datetime
 import uuid
@@ -39,23 +37,20 @@ router = APIRouter()
 
 # Endpoint to check tasks running
 @router.get("/list")
-async def check_tasks(token: Annotated[dict, Depends(check_token)]):
+async def check_tasks():
     '''
-    Checks which tasks created by the user are being executed in the backend.
+    Checks which tasks are being executed in the backend.
     Parameters:
         token (dict): Decoded authentication token.
     Return:
         list[dict]: Dictionary containing the tasks. Task IDs are used as keys and values indicate starting time.
     '''
 
-    user = token['user']
-
     list_dict ={}
 
     for key in tasks.keys():
         task_ob = tasks[key]
-        if task_ob.user == user:
-            list_dict[key] = task_ob.start_time
+        list_dict[key] = task_ob.start_time
 
     return list_dict
 
@@ -70,9 +65,7 @@ async def city_setup(input: schemas.InputCity):
     Return:
         (JSON): ID of the task.
     '''
-    #Check user
-    
-    #user = token['user']
+
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
     
@@ -103,13 +96,13 @@ async def city_setup(input: schemas.InputCity):
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(setup_task(task_id))
-    task_ob = schemas.ModelTask(task=task, user='user', start_time=time)
+    task_ob = schemas.ModelTask(task=task, start_time=time)
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
 # Endpoint to run the task 
 @router.post("/run")
-async def run_model(input: schemas.InputData, token: Annotated[dict, Depends(check_token)]):
+async def run_model(input: schemas.InputData):
     '''
     Starts execution of a model task.
     Parameters:
@@ -118,9 +111,8 @@ async def run_model(input: schemas.InputData, token: Annotated[dict, Depends(che
     Return:
         (JSON): ID of the task.
     '''
-    #Check user
     
-    user = token['user']
+   
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
 
@@ -148,13 +140,13 @@ async def run_model(input: schemas.InputData, token: Annotated[dict, Depends(che
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(model_task(task_id))
-    task_ob = schemas.ModelTask(task=task, user=user, start_time=time)
+    task_ob = schemas.ModelTask(task=task, start_time=time)
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
 
 @router.post("/city_metrics")
-async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depends(check_token)]):
+async def run_analysis(input: schemas.InputResults):
     '''
     Get the metrics for the actual city
     Parameters:
@@ -163,9 +155,7 @@ async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depen
     Return:
         (JSON): ID of the task.
     '''
-    # Check user
-
-    user = token['user']
+    
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
 
@@ -187,12 +177,12 @@ async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depen
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(analysis_task(task_id))
-    task_ob = schemas.ModelTask(task=task, user=user, start_time=time)
+    task_ob = schemas.ModelTask(task=task, start_time=time)
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
 @router.post("/run_analysis")
-async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depends(check_token)]):
+async def run_analysis(input: schemas.InputResults):
     '''
     Starts execution of an analysis task.
     Parameters:
@@ -201,9 +191,8 @@ async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depen
     Return:
         (JSON): ID of the task.
     '''
-    # Check user
+  
 
-    user = token['user']
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f'Starting run with task ID: {task_id}')
 
@@ -225,7 +214,7 @@ async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depen
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(analysis_task(task_id))
-    task_ob = schemas.ModelTask(task=task, user=user, start_time=time)
+    task_ob = schemas.ModelTask(task=task, start_time=time)
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
@@ -233,7 +222,7 @@ async def run_analysis(input: schemas.InputResults, token: Annotated[dict, Depen
 
 # Endpoint to stop the task
 @router.delete("/stop/{task_id}")
-async def stop_model(task_id: str, token: Annotated[dict, Depends(check_token)]):
+async def stop_model(task_id: str):
     '''
     Stops a running task.
     Parameters:
@@ -243,23 +232,21 @@ async def stop_model(task_id: str, token: Annotated[dict, Depends(check_token)])
         (JSON): Confirmation of cancellation.
     '''
     
-    task_ob = tasks.get(task_id)
-    
     try:
-        user = token['user']
+        task_ob = tasks.get(task_id)
     except:
-        raise HTTPException(status_code=404, detail="No task with ID "+ task_id)
-    
-    if not user==task_ob.user:
-        raise HTTPException(status_code=404, detail="Access forbidden")
+        raise HTTPException(status_code=404, detail="Task not found")
 
     task = task_ob.task
+
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    
     if task.done():
         raise HTTPException(status_code=400, detail="Task already completed")
 
     task.cancel()  # Cancel the running task
+
     try:
         await task  # Wait for the task to handle the cancellation
     except asyncio.CancelledError:
@@ -273,7 +260,7 @@ async def stop_model(task_id: str, token: Annotated[dict, Depends(check_token)])
 # Endpoint to download the map
 
 @router.get("/map/{task_id}")
-async def download_map(task_id: str, input: schemas.InputData, token: Annotated[dict, Depends(check_token)]):
+async def download_map(task_id: str, input: schemas.InputData):
     '''
     Streams the download of the map stored in disk for the task with ID equal to task_id.
     Parameters:
@@ -288,14 +275,6 @@ async def download_map(task_id: str, input: schemas.InputData, token: Annotated[
     
     if task_ob is None:
         raise HTTPException(status_code=404, detail="No task with ID " + task_id)
-    
-    try:
-        user = token['user']
-    except KeyError:
-        raise HTTPException(status_code=404, detail="Invalid token")
-    
-    if user != task_ob.user:
-        raise HTTPException(status_code=403, detail="Access forbidden")
     
     suffix = ".geojson"
     city_key = list(input.city.keys())[0]
