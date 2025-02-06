@@ -1,11 +1,13 @@
-#schemas.py
+# schemas.py
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Dict
 import asyncio
 
+
 class InputCity(BaseModel):
     city: dict = {"viladecans": {"nominatimstring": "Viladecans, Barcelona, Spain"}}
+
 
 class InputData(InputCity):
     prune_measure: str = "betweenness"
@@ -18,9 +20,10 @@ class InputData(InputCity):
         "aprovisionamiento": 3.0,
         "cultura": 4.0,
         "deporte": 5.0,
-        "transporte": 2.0
+        "transporte": 2.0,
     }
     buffer_walk_distance: int = 500
+
 
 class InputResults(InputCity):
     phase: int
@@ -28,6 +31,6 @@ class InputResults(InputCity):
 
 
 class ModelTask(BaseModel):
-    task : Optional[asyncio.Task] = Field(default=None, exclude=True)
+    task: Optional[asyncio.Task] = Field(default=None, exclude=True)
     start_time: str
     model_config = ConfigDict(arbitrary_types_allowed=True)

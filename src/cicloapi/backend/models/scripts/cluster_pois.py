@@ -1,6 +1,7 @@
-#config
+# config
 from pathlib import Path
 from cicloapi.backend.models.scripts.path import PATH
+
 debug = True
 
 
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 
 # Geo
 import osmnx as ox
+
 ox.settings.log_file = True
 ox.settings.requests_timeout = 300
 ox.settings.logs_folder = PATH["logs"]
@@ -33,15 +35,28 @@ from shapely.geometry import Polygon
 from tobler.util import h3fy
 
 # Local
-from cicloapi.backend.models.scripts.functions import fill_holes, extract_relevant_polygon, csv_to_ox, convert_to_h3
-from cicloapi.backend.models.parameters.parameters import sanidad, educacion, administracion, aprovisionamiento, cultura, deporte, transporte
+from cicloapi.backend.models.scripts.functions import (
+    fill_holes,
+    extract_relevant_polygon,
+    csv_to_ox,
+    convert_to_h3,
+)
+from cicloapi.backend.models.parameters.parameters import (
+    sanidad,
+    educacion,
+    administracion,
+    aprovisionamiento,
+    cultura,
+    deporte,
+    transporte,
+)
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
@@ -55,13 +70,13 @@ categories = {
     "aprovisionamiento": aprovisionamiento,
     "cultura": cultura,
     "deporte": deporte,
-    "transporte": transporte
+    "transporte": transporte,
 }
 
 
 def main(
     PATH: str,
-    task_id : str,
+    task_id: str,
     cities: Dict[str, Dict[str, Union[str, None]]],
     h3_zoom: int,
     snapthreshold: int,
@@ -71,19 +86,19 @@ def main(
     aprovisionamiento_slider: float,
     cultura_slider: float,
     deporte_slider: float,
-    transporte_slider: float
+    transporte_slider: float,
 ) -> None:
     """
-    Process city data to generate H3 hexagons, analyze points of interest (POIs), 
+    Process city data to generate H3 hexagons, analyze points of interest (POIs),
     and apply clustering for urban analysis.
 
     Args:
         PATH (str): Path to the base directory containing city data.
-        cities (Dict[str, Dict[str, Union[str, None]]]): A dictionary where keys 
-            are place IDs and values are dictionaries containing city-specific metadata 
+        cities (Dict[str, Dict[str, Union[str, None]]]): A dictionary where keys
+            are place IDs and values are dictionaries containing city-specific metadata
             (e.g., Nominatim strings or shapefile paths).
         h3_zoom (int): H3 resolution level for generating hexagons.
-        snapthreshold (int): Distance threshold in meters for snapping centroids 
+        snapthreshold (int): Distance threshold in meters for snapping centroids
             to the nearest network nodes.
         sanidad_slider (float): Weight for the "sanidad" category POIs.
         educacion_slider (float): Weight for the "educacion" category POIs.
@@ -103,11 +118,11 @@ def main(
     Workflow:
         1. Load and preprocess city geometries (from Nominatim or shapefiles).
         2. Generate H3 hexagons for the city's region.
-        3. Intersect hexagons with points of interest (POIs) for each category, applying 
+        3. Intersect hexagons with points of interest (POIs) for each category, applying
            category-specific weights.
-        4. Perform clustering using Affinity Propagation based on POI density and 
+        4. Perform clustering using Affinity Propagation based on POI density and
            location centroids.
-        5. Snap exemplar centroids to the nearest nodes in the city's transport network 
+        5. Snap exemplar centroids to the nearest nodes in the city's transport network
            within a defined threshold.
 
     Example Usage:
@@ -137,14 +152,16 @@ def main(
         # Print place information
         logger.info(f"{placeid}: Loading location polygon and generating H3 hexagons")
 
-        ## grab polygon from prepare_pois.py 
+        ## grab polygon from prepare_pois.py
         # Check if 'nominatimstring' exists
         if placeinfo.get("nominatimstring"):
             logger.debug(f"Geocoding location: {placeinfo['nominatimstring']}")
             try:
                 # Geocode to get the location geometry and extract relevant polygon
                 location = ox.geocoder.geocode_to_gdf(placeinfo["nominatimstring"])
-                location = fill_holes(extract_relevant_polygon(placeid, location.geometry.iloc[0]))
+                location = fill_holes(
+                    extract_relevant_polygon(placeid, location.geometry.iloc[0])
+                )
             except Exception as e:
                 logger.error(f"Error during geocoding for {placeid}: {e}")
                 continue  # Skip to the next city if there is an error
@@ -154,12 +171,16 @@ def main(
                 with fiona.open(f"../data/{placeid}/{placeid}.shp") as shp:
                     first = next(iter(shp))
                     try:
-                        location = Polygon(shapely.geometry.shape(first['geometry']))  # Handle if LineString is present
+                        location = Polygon(
+                            shapely.geometry.shape(first["geometry"])
+                        )  # Handle if LineString is present
                     except Exception as e:
                         logger.error(f"Error processing geometry for {placeid}: {e}")
                         continue  # Skip to the next city if there is an error
             except Exception as e:
-                logger.error(f"Shapefile not found or error reading shapefile for {placeid}: {e}")
+                logger.error(
+                    f"Shapefile not found or error reading shapefile for {placeid}: {e}"
+                )
                 continue  # Skip to the next city if there is an error
 
         gdf_hex = convert_to_h3(location, h3_zoom)
@@ -172,7 +193,7 @@ def main(
             "aprovisionamiento": aprovisionamiento,
             "cultura": cultura,
             "deporte": deporte,
-            "transporte": transporte
+            "transporte": transporte,
         }
 
         slider_weights = {
@@ -182,7 +203,7 @@ def main(
             "aprovisionamiento": aprovisionamiento_slider,
             "cultura": cultura_slider,
             "deporte": deporte_slider,
-            "transporte": transporte_slider
+            "transporte": transporte_slider,
         }
 
         geodataframes = []
@@ -190,30 +211,46 @@ def main(
         # Process POIs and perform spatial operations
         for category_name, pois in categories.items():
             if not isinstance(pois, dict):  # Validate that 'pois' is a dictionary
-                logger.error(f"Expected dictionary for category '{category_name}', got {type(pois)}")
-                raise ValueError(f"Expected dictionary for category '{category_name}', got {type(pois)}")
+                logger.error(
+                    f"Expected dictionary for category '{category_name}', got {type(pois)}"
+                )
+                raise ValueError(
+                    f"Expected dictionary for category '{category_name}', got {type(pois)}"
+                )
 
             for poi_type in pois.keys():  # Loop through each POI type in the category
-                poi_file = Path(PATH["data"]) / placeid / f"{placeid}_poi_{poi_type}.gpkg"
+                poi_file = (
+                    Path(PATH["data"]) / placeid / f"{placeid}_poi_{poi_type}.gpkg"
+                )
 
                 if poi_file.exists():
                     logger.info(f"Processing POI: {poi_type} for city {placeid}")
                     geo = gpd.read_file(poi_file)
                     geo["poi_source"] = poi_type  # Assign POI type (e.g., 'hospital')
-                    geo["category"] = category_name  # Assign category name (e.g., 'sanidad')
-                    geo["weight"] = slider_weights.get(category_name, 1)  # Assign slider weight
+                    geo["category"] = (
+                        category_name  # Assign category name (e.g., 'sanidad')
+                    )
+                    geo["weight"] = slider_weights.get(
+                        category_name, 1
+                    )  # Assign slider weight
                     geodataframes.append(geo)  # Add to the list of GeoDataFrames
                 else:
-                    logger.warning(f"POI file {poi_file} not found for city {placeid} and category {category_name}")
+                    logger.warning(
+                        f"POI file {poi_file} not found for city {placeid} and category {category_name}"
+                    )
 
         # Combine all GeoDataFrames and perform spatial join
         if geodataframes:
-            logger.info(f"Combining {len(geodataframes)} GeoDataFrames for city {placeid}")
+            logger.info(
+                f"Combining {len(geodataframes)} GeoDataFrames for city {placeid}"
+            )
             combined_geo = gpd.GeoDataFrame(pd.concat(geodataframes, ignore_index=True))
             combined_geo = combined_geo.to_crs(gdf_hex.crs)
 
             # Perform spatial join
-            hexagon_with_counts = gpd.sjoin(gdf_hex, combined_geo, how="inner", predicate="intersects")
+            hexagon_with_counts = gpd.sjoin(
+                gdf_hex, combined_geo, how="inner", predicate="intersects"
+            )
 
             # Apply weights to the point count
             hexagon_with_counts["weighted_count"] = hexagon_with_counts["weight"]
@@ -247,7 +284,15 @@ def main(
             gdf_hex.loc[exemplars_indices, "is_exemplar"] = 1  # Mark exemplars
 
             # Create the final dataframe keeping centroids and exemplar labels
-            gdf_hex = gdf_hex[["geometry", "centroid", "weighted_point_count", "cluster", "is_exemplar"]]
+            gdf_hex = gdf_hex[
+                [
+                    "geometry",
+                    "centroid",
+                    "weighted_point_count",
+                    "cluster",
+                    "is_exemplar",
+                ]
+            ]
         else:
             logger.warning(f"No POI files found for city {placeid}")
 
@@ -265,23 +310,41 @@ def main(
             locations = {}
 
             # Load network data
-            G_caralls[placeid] = csv_to_ox(PATH["data"] / placeid, placeid, 'carall')
-            G_caralls[placeid].graph["crs"] = 'epsg:4326'  # Assign CRS for OSMNX compatibility
-            G_caralls_simplified[placeid] = csv_to_ox(PATH["data"] / placeid, placeid, 'carall_simplified')
-            G_caralls_simplified[placeid].graph["crs"] = 'epsg:4326'
+            G_caralls[placeid] = csv_to_ox(PATH["data"] / placeid, placeid, "carall")
+            G_caralls[placeid].graph[
+                "crs"
+            ] = "epsg:4326"  # Assign CRS for OSMNX compatibility
+            G_caralls_simplified[placeid] = csv_to_ox(
+                PATH["data"] / placeid, placeid, "carall_simplified"
+            )
+            G_caralls_simplified[placeid].graph["crs"] = "epsg:4326"
 
-            gdf = gpd.GeoDataFrame(gdf_hex[gdf_hex["is_exemplar"] == 1], geometry='centroid', crs="EPSG:4326")
+            gdf = gpd.GeoDataFrame(
+                gdf_hex[gdf_hex["is_exemplar"] == 1],
+                geometry="centroid",
+                crs="EPSG:4326",
+            )
             G_carall = G_caralls[placeid]
 
             # Snap points to the nearest nodes in the network
             nnids = set()
-            for g in gdf['centroid']:
+            for g in gdf["centroid"]:
                 n = ox.distance.nearest_nodes(G_carall, g.x, g.y)
                 # Only snap if within the defined threshold
-                if n not in nnids and haversine((g.y, g.x), (G_carall.nodes[n]["y"], G_carall.nodes[n]["x"]), unit="m") <= snapthreshold:
+                if (
+                    n not in nnids
+                    and haversine(
+                        (g.y, g.x),
+                        (G_carall.nodes[n]["y"], G_carall.nodes[n]["x"]),
+                        unit="m",
+                    )
+                    <= snapthreshold
+                ):
                     nnids.add(n)
 
-            nnids_file = Path(PATH["task_output"]) / task_id / f"{placeid}_nnids_sliders.csv"
+            nnids_file = (
+                Path(PATH["task_output"]) / task_id / f"{placeid}_nnids_sliders.csv"
+            )
             nnids_file.parent.mkdir(parents=True, exist_ok=True)
             df = pd.DataFrame({"nnid": list(nnids)})
             df.to_csv(nnids_file, index=False, header=False)
@@ -290,6 +353,7 @@ def main(
 
         except Exception as e:
             logger.error(f"Error processing network for {placeid}: {e}")
-    
+
+
 if __name__ == "__main__":
     main()

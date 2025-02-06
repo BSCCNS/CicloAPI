@@ -1,7 +1,8 @@
 from pathlib import Path
 from cicloapi.backend.models.scripts.path import PATH
-#from scripts.initialize import *
-from cicloapi.backend.models.parameters.parameters import  SERVER, plotparam
+
+# from scripts.initialize import *
+from cicloapi.backend.models.parameters.parameters import SERVER, plotparam
 
 # System
 import copy
@@ -45,8 +46,7 @@ import geojson
 
 
 def holepatchlist_from_cov(cov, map_center):
-    """Get a patchlist of holes (= shapely interiors) from a coverage Polygon or MultiPolygon
-    """
+    """Get a patchlist of holes (= shapely interiors) from a coverage Polygon or MultiPolygon"""
     holeseq_per_poly = get_holes(cov)
     holepatchlist = []
     for hole_per_poly in holeseq_per_poly:
@@ -54,9 +54,9 @@ def holepatchlist_from_cov(cov, map_center):
             holepatchlist.append(hole_to_patch(hole, map_center))
     return holepatchlist
 
+
 def fill_holes(cov):
-    """Fill holes (= shapely interiors) from a coverage Polygon or MultiPolygon
-    """
+    """Fill holes (= shapely interiors) from a coverage Polygon or MultiPolygon"""
     holeseq_per_poly = get_holes(cov)
     holes = []
     for hole_per_poly in holeseq_per_poly:
@@ -64,10 +64,15 @@ def fill_holes(cov):
             holes.append(hole)
     eps = 0.00000001
     if isinstance(cov, shapely.geometry.multipolygon.MultiPolygon):
-        cov_filled = ops.unary_union([poly for poly in cov] + [Polygon(hole).buffer(eps) for hole in holes])
+        cov_filled = ops.unary_union(
+            [poly for poly in cov] + [Polygon(hole).buffer(eps) for hole in holes]
+        )
     elif isinstance(cov, shapely.geometry.polygon.Polygon) and not cov.is_empty:
-        cov_filled = ops.unary_union([cov] + [Polygon(hole).buffer(eps) for hole in holes])
+        cov_filled = ops.unary_union(
+            [cov] + [Polygon(hole).buffer(eps) for hole in holes]
+        )
     return cov_filled
+
 
 def extract_relevant_polygon(placeid, mp):
     """Return the most relevant polygon of a multipolygon mp, for being considered the city limit.
@@ -76,30 +81,40 @@ def extract_relevant_polygon(placeid, mp):
     if isinstance(mp, shapely.geometry.polygon.Polygon):
         return mp
     elif isinstance(mp, shapely.geometry.multipolygon.MultiPolygon):
-        if placeid == "tokyo":  # If Tokyo, take poly with most northern bound, otherwise largest
+        if (
+            placeid == "tokyo"
+        ):  # If Tokyo, take poly with most northern bound, otherwise largest
             return max(mp.geoms, key=lambda a: a.bounds[-1])
         else:
             return max(mp.geoms, key=lambda a: a.area)
     else:
         raise ValueError("Input 'mp' must be a Polygon or MultiPolygon object.")
 
+
 def get_holes(cov):
-    """Get holes (= shapely interiors) from a coverage Polygon or MultiPolygon
-    """
+    """Get holes (= shapely interiors) from a coverage Polygon or MultiPolygon"""
     holes = []
     if isinstance(cov, shapely.geometry.multipolygon.MultiPolygon):
-        for pol in cov.geoms: # cov is generally a MultiPolygon, so we iterate through its Polygons
+        for (
+            pol
+        ) in (
+            cov.geoms
+        ):  # cov is generally a MultiPolygon, so we iterate through its Polygons
             holes.append(pol.interiors)
     elif isinstance(cov, shapely.geometry.polygon.Polygon) and not cov.is_empty:
         holes.append(cov.interiors)
     return holes
 
-def cov_to_patchlist(cov, map_center, return_holes = True):
-    """Turns a coverage Polygon or MultiPolygon into a matplotlib patch list, for plotting
-    """
+
+def cov_to_patchlist(cov, map_center, return_holes=True):
+    """Turns a coverage Polygon or MultiPolygon into a matplotlib patch list, for plotting"""
     p = []
     if isinstance(cov, shapely.geometry.multipolygon.MultiPolygon):
-        for pol in cov.geoms: # cov is generally a MultiPolygon, so we iterate through its Polygons
+        for (
+            pol
+        ) in (
+            cov.geoms
+        ):  # cov is generally a MultiPolygon, so we iterate through its Polygons
             p.append(pol_to_patch(pol, map_center))
     elif isinstance(cov, shapely.geometry.polygon.Polygon) and not cov.is_empty:
         p.append(pol_to_patch(cov, map_center))
@@ -109,16 +124,16 @@ def cov_to_patchlist(cov, map_center, return_holes = True):
         holepatchlist = holepatchlist_from_cov(cov, map_center)
         return p, holepatchlist
 
+
 def pol_to_patch(pol, map_center):
-    """Turns a coverage Polygon into a matplotlib patch, for plotting
-    """
+    """Turns a coverage Polygon into a matplotlib patch, for plotting"""
     y, x = pol.exterior.coords.xy
     pos_transformed, _ = project_pos(y, x, map_center)
     return matplotlib.patches.Polygon(pos_transformed)
 
+
 def hole_to_patch(hole, map_center):
-    """Turns a LinearRing (hole) into a matplotlib patch, for plotting
-    """
+    """Turns a LinearRing (hole) into a matplotlib patch, for plotting"""
     y, x = hole.coords.xy
     pos_transformed, _ = project_pos(y, x, map_center)
     return matplotlib.patches.Polygon(pos_transformed)
@@ -127,21 +142,48 @@ def hole_to_patch(hole, map_center):
 def set_analysissubplot(ax, key):
     ax.set_xlim(0, 1)
     ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
-    if key in ["length", "length_lcc", "coverage", "poi_coverage", "components", "efficiency_local", "efficiency_global"]:
-        ax.set_ylim(bottom = 0)
-    if key in ["directness_lcc", "directness_lcc_linkwise", "directness", "directness_all_linkwise"]:
-        ax.set_ylim(bottom = 0.2)
-    if key in ["directness_lcc", "directness_lcc_linkwise", "directness", "directness_all_linkwise", "efficiency_global", "efficiency_local"]:
-        ax.set_ylim(top = 1)
+    if key in [
+        "length",
+        "length_lcc",
+        "coverage",
+        "poi_coverage",
+        "components",
+        "efficiency_local",
+        "efficiency_global",
+    ]:
+        ax.set_ylim(bottom=0)
+    if key in [
+        "directness_lcc",
+        "directness_lcc_linkwise",
+        "directness",
+        "directness_all_linkwise",
+    ]:
+        ax.set_ylim(bottom=0.2)
+    if key in [
+        "directness_lcc",
+        "directness_lcc_linkwise",
+        "directness",
+        "directness_all_linkwise",
+        "efficiency_global",
+        "efficiency_local",
+    ]:
+        ax.set_ylim(top=1)
 
 
 def initplot():
-    fig = plt.figure(figsize=(plotparam["bbox"][0]/plotparam["dpi"], plotparam["bbox"][1]/plotparam["dpi"]), dpi=plotparam["dpi"])
-    plt.axes().set_aspect('equal')
+    fig = plt.figure(
+        figsize=(
+            plotparam["bbox"][0] / plotparam["dpi"],
+            plotparam["bbox"][1] / plotparam["dpi"],
+        ),
+        dpi=plotparam["dpi"],
+    )
+    plt.axes().set_aspect("equal")
     plt.axes().set_xmargin(0.01)
     plt.axes().set_ymargin(0.01)
-    plt.axes().set_axis_off() # Does not work anymore - unnown why not.
+    plt.axes().set_axis_off()  # Does not work anymore - unnown why not.
     return fig
+
 
 def nodesize_from_pois(nnids):
     """Determine POI node size based on number of POIs.
@@ -149,7 +191,7 @@ def nodesize_from_pois(nnids):
     """
     minnodesize = 30
     maxnodesize = 220
-    return max(minnodesize, maxnodesize-len(nnids))
+    return max(minnodesize, maxnodesize - len(nnids))
 
 
 def simplify_ig(G):
@@ -158,7 +200,7 @@ def simplify_ig(G):
     G_temp.es["length"] = G_temp.es["weight"]
 
     simplified_graph = ox.simplify_graph(nx.MultiDiGraph(G_temp.to_networkx()))
-    
+
     # Ensure edge attributes are scalars
     for u, v, data in simplified_graph.edges(data=True):
         for key, value in data.items():
@@ -171,34 +213,59 @@ def simplify_ig(G):
     return output
 
 
-def nxdraw(G, networktype, map_center = False, nnids = False, drawfunc = "nx.draw", nodesize = 0, weighted = False, maxwidthsquared = 0, simplified = False):
-    """Take an igraph graph G and draw it with a networkx drawfunc.
-    """
+def nxdraw(
+    G,
+    networktype,
+    map_center=False,
+    nnids=False,
+    drawfunc="nx.draw",
+    nodesize=0,
+    weighted=False,
+    maxwidthsquared=0,
+    simplified=False,
+):
+    """Take an igraph graph G and draw it with a networkx drawfunc."""
     if simplified:
         G.es["length"] = G.es["weight"]
         G_nx = ox.simplify_graph(nx.MultiDiGraph(G.to_networkx())).to_undirected()
     else:
         G_nx = G.to_networkx()
-    if nnids is not False: # Restrict to nnids node ids
-        nnids_nx = [k for k,v in dict(G_nx.nodes(data=True)).items() if v['id'] in nnids]
+    if nnids is not False:  # Restrict to nnids node ids
+        nnids_nx = [
+            k for k, v in dict(G_nx.nodes(data=True)).items() if v["id"] in nnids
+        ]
         G_nx = G_nx.subgraph(nnids_nx)
-        
+
     pos_transformed, map_center = project_nxpos(G_nx, map_center)
     if weighted is True:
         # The max width should be the node diameter (=sqrt(nodesize))
         widths = list(nx.get_edge_attributes(G_nx, "weight").values())
         widthfactor = 1.1 * math.sqrt(maxwidthsquared) / max(widths)
         widths = [max(0.33, w * widthfactor) for w in widths]
-        eval(drawfunc)(G_nx, pos_transformed, **plotparam[networktype], node_size = nodesize, width = widths)
+        eval(drawfunc)(
+            G_nx,
+            pos_transformed,
+            **plotparam[networktype],
+            node_size=nodesize,
+            width=widths,
+        )
     elif type(weighted) is float or type(weighted) is int and weighted > 0:
-        eval(drawfunc)(G_nx, pos_transformed, **plotparam[networktype], node_size = nodesize, width = weighted)
+        eval(drawfunc)(
+            G_nx,
+            pos_transformed,
+            **plotparam[networktype],
+            node_size=nodesize,
+            width=weighted,
+        )
     else:
-        eval(drawfunc)(G_nx, pos_transformed, **plotparam[networktype], node_size = nodesize)
+        eval(drawfunc)(
+            G_nx, pos_transformed, **plotparam[networktype], node_size=nodesize
+        )
     return map_center
 
 
-
 # OTHER FUNCTIONS
+
 
 def common_entries(*dcts):
     """Like zip() but for dicts.
@@ -209,81 +276,102 @@ def common_entries(*dcts):
     for i in set(dcts[0]).intersection(*dcts[1:]):
         yield (i,) + tuple(d[i] for d in dcts)
 
-def project_nxpos(G, map_center = False):
+
+def project_nxpos(G, map_center=False):
     """Take a spatial nx network G and projects its GPS coordinates to local azimuthal.
     Returns transformed positions, as used by nx.draw()
     """
-    lats = nx.get_node_attributes(G, 'x')
-    lons = nx.get_node_attributes(G, 'y')
-    pos = {nid:(lat,-lon) for (nid,lat,lon) in common_entries(lats,lons)}
+    lats = nx.get_node_attributes(G, "x")
+    lons = nx.get_node_attributes(G, "y")
+    pos = {nid: (lat, -lon) for (nid, lat, lon) in common_entries(lats, lons)}
     if map_center:
         loncenter = map_center[0]
         latcenter = map_center[1]
     else:
         loncenter = np.mean(list(lats.values()))
-        latcenter = -1* np.mean(list(lons.values()))
-    local_azimuthal_projection = "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(latcenter, loncenter)
+        latcenter = -1 * np.mean(list(lons.values()))
+    local_azimuthal_projection = (
+        "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(
+            latcenter, loncenter
+        )
+    )
     # Use transformer: https://gis.stackexchange.com/questions/127427/transforming-shapely-polygon-and-multipolygon-objects
     wgs84_to_aeqd = pyproj.Transformer.from_proj(
         pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
-        pyproj.Proj(local_azimuthal_projection))
-    pos_transformed = {nid:list(ops.transform(wgs84_to_aeqd.transform, Point(latlon)).coords)[0] for nid, latlon in pos.items()}
-    return pos_transformed, (loncenter,latcenter)
+        pyproj.Proj(local_azimuthal_projection),
+    )
+    pos_transformed = {
+        nid: list(ops.transform(wgs84_to_aeqd.transform, Point(latlon)).coords)[0]
+        for nid, latlon in pos.items()
+    }
+    return pos_transformed, (loncenter, latcenter)
 
 
-def project_pos(lats, lons, map_center = False):
-    """Project GPS coordinates to local azimuthal.
-    """
-    pos = [(lat,-lon) for lat,lon in zip(lats,lons)]
+def project_pos(lats, lons, map_center=False):
+    """Project GPS coordinates to local azimuthal."""
+    pos = [(lat, -lon) for lat, lon in zip(lats, lons)]
     if map_center:
         loncenter = map_center[0]
         latcenter = map_center[1]
     else:
         loncenter = np.mean(list(lats.values()))
-        latcenter = -1* np.mean(list(lons.values()))
-    local_azimuthal_projection = "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(latcenter, loncenter)
+        latcenter = -1 * np.mean(list(lons.values()))
+    local_azimuthal_projection = (
+        "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(
+            latcenter, loncenter
+        )
+    )
     # Use transformer: https://gis.stackexchange.com/questions/127427/transforming-shapely-polygon-and-multipolygon-objects
     wgs84_to_aeqd = pyproj.Transformer.from_proj(
         pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
-        pyproj.Proj(local_azimuthal_projection))
-    pos_transformed = [(ops.transform(wgs84_to_aeqd.transform, Point(latlon)).coords)[0] for latlon in pos]
-    return pos_transformed, (loncenter,latcenter)
+        pyproj.Proj(local_azimuthal_projection),
+    )
+    pos_transformed = [
+        (ops.transform(wgs84_to_aeqd.transform, Point(latlon)).coords)[0]
+        for latlon in pos
+    ]
+    return pos_transformed, (loncenter, latcenter)
 
 
-def round_coordinates(G, r = 7):
+def round_coordinates(G, r=7):
     for v in G.vs:
         G.vs[v.index]["x"] = round(G.vs[v.index]["x"], r)
         G.vs[v.index]["y"] = round(G.vs[v.index]["y"], r)
+
 
 def mirror_y(G):
     for v in G.vs:
         y = G.vs[v.index]["y"]
         G.vs[v.index]["y"] = -y
-    
+
+
 def dist(v1, v2):
-    dist = haversine((v1['y'],v1['x']),(v2['y'],v2['x']), unit="m") # x is lon, y is lat
+    dist = haversine(
+        (v1["y"], v1["x"]), (v2["y"], v2["x"]), unit="m"
+    )  # x is lon, y is lat
     return dist
 
+
 def dist_vector(v1_list, v2_list):
-    dist_list = haversine_vector(v1_list, v2_list, unit="m") # [(lat,lon)], [(lat,lon)]
+    dist_list = haversine_vector(v1_list, v2_list, unit="m")  # [(lat,lon)], [(lat,lon)]
     return dist_list
 
-def osm_to_ig(node, edge):
-    """ Turns a node and edge dataframe into an igraph Graph.
-    """
-    
-    G = ig.Graph(directed = False)
 
-    x_coords = node['x'].tolist() 
-    y_coords = node['y'].tolist()
-    ids = node['osmid'].tolist()
+def osm_to_ig(node, edge):
+    """Turns a node and edge dataframe into an igraph Graph."""
+
+    G = ig.Graph(directed=False)
+
+    x_coords = node["x"].tolist()
+    y_coords = node["y"].tolist()
+    ids = node["osmid"].tolist()
     coords = []
 
     for i in range(len(x_coords)):
-        G.add_vertex(x = x_coords[i], y = y_coords[i], id = ids[i])
+        G.add_vertex(x=x_coords[i], y=y_coords[i], id=ids[i])
         coords.append((x_coords[i], y_coords[i]))
 
-    id_dict = dict(zip(G.vs['id'], np.arange(0, G.vcount()).tolist()))
+    id_dict = dict(zip(G.vs["id"], np.arange(0, G.vcount()).tolist()))
     coords_dict = dict(zip(np.arange(0, G.vcount()).tolist(), coords))
 
     edge_list = []
@@ -291,11 +379,13 @@ def osm_to_ig(node, edge):
     edge_info["weight"] = []
     edge_info["osmid"] = []
     for i in range(len(edge)):
-        edge_list.append([id_dict.get(edge['u'][i]), id_dict.get(edge['v'][i])])
-        edge_info["weight"].append(round(edge['length'][i], 10))
-        edge_info["osmid"].append(edge['osmid'][i])
+        edge_list.append([id_dict.get(edge["u"][i]), id_dict.get(edge["v"][i])])
+        edge_info["weight"].append(round(edge["length"][i], 10))
+        edge_info["osmid"].append(edge["osmid"][i])
 
-    G.add_edges(edge_list) # attributes = edge_info doesn't work although it should: https://igraph.org/python/doc/igraph.Graph-class.html#add_edges
+    G.add_edges(
+        edge_list
+    )  # attributes = edge_info doesn't work although it should: https://igraph.org/python/doc/igraph.Graph-class.html#add_edges
     for i in range(len(edge)):
         G.es[i]["weight"] = edge_info["weight"][i]
         G.es[i]["osmid"] = edge_info["osmid"][i]
@@ -307,18 +397,31 @@ def osm_to_ig(node, edge):
 def compress_file(folder, filename):
     file_path = Path(folder) / f"{filename}.csv"
     compressed_file_path = Path(folder) / f"{filename}.zip"
-    
-    # Compress the file
-    with open(file_path, 'rb') as f_in:
-        with zipfile.ZipFile(compressed_file_path, 'w', zipfile.ZIP_DEFLATED) as f_out:
-            f_out.write(file_path, arcname=file_path.name)  # Keep the original name within the zip
 
-    #print(f"Compressed: {file_path} -> {compressed_file_path}")
-        
-def ox_to_csv(G, p: Path, placeid: str, parameterid: str, postfix: str = "", compress: bool = True, verbose: bool = True):
+    # Compress the file
+    with open(file_path, "rb") as f_in:
+        with zipfile.ZipFile(compressed_file_path, "w", zipfile.ZIP_DEFLATED) as f_out:
+            f_out.write(
+                file_path, arcname=file_path.name
+            )  # Keep the original name within the zip
+
+    # print(f"Compressed: {file_path} -> {compressed_file_path}")
+
+
+def ox_to_csv(
+    G,
+    p: Path,
+    placeid: str,
+    parameterid: str,
+    postfix: str = "",
+    compress: bool = True,
+    verbose: bool = True,
+):
     # Set CRS if not already present
     if "crs" not in G.graph:
-        G.graph["crs"] = 'epsg:4326'  # needed for OSMNX's graph_to_gdfs in utils_graph.py
+        G.graph["crs"] = (
+            "epsg:4326"  # needed for OSMNX's graph_to_gdfs in utils_graph.py
+        )
 
     # Attempt to convert the graph to GeoDataFrames
     try:
@@ -347,7 +450,7 @@ def ox_to_csv(G, p: Path, placeid: str, parameterid: str, postfix: str = "", com
 
 
 def check_extract_zip(p: Path, prefix: str) -> bool:
-    """ Check if a zip file prefix+'_nodes.zip' and prefix+'_edges.zip'
+    """Check if a zip file prefix+'_nodes.zip' and prefix+'_edges.zip'
     is available at path p. If so, extract it and return True; otherwise, return False.
     If you call this function, remember to clean up (i.e., delete the unzipped files)
     after you are done like this:
@@ -360,10 +463,10 @@ def check_extract_zip(p: Path, prefix: str) -> bool:
     nodes_zip = p / f"{prefix}_nodes.zip"
     edges_zip = p / f"{prefix}_edges.zip"
 
-    try: # Use zip files if available
-        with zipfile.ZipFile(nodes_zip, 'r') as zfile:
+    try:  # Use zip files if available
+        with zipfile.ZipFile(nodes_zip, "r") as zfile:
             zfile.extract(f"{prefix}_nodes.csv", p)
-        with zipfile.ZipFile(edges_zip, 'r') as zfile:
+        with zipfile.ZipFile(edges_zip, "r") as zfile:
             zfile.extract(f"{prefix}_edges.csv", p)
         return True
     except FileNotFoundError:
@@ -373,37 +476,52 @@ def check_extract_zip(p: Path, prefix: str) -> bool:
         print(f"An error occurred while extracting zip files: {e}")
         return False
 
+
 def csv_to_ox(p: Path, placeid: str, parameterid: str) -> nx.MultiDiGraph:
-    """ Load a networkx graph from _edges.csv and _nodes.csv
+    """Load a networkx graph from _edges.csv and _nodes.csv
     The edge file must have attributes u,v,osmid,length
     The node file must have attributes y,x,osmid
     Only these attributes are loaded.
     """
     prefix = f"{placeid}_{parameterid}"
     compress = check_extract_zip(p, prefix)
-    
+
     edges_file = p / f"{prefix}_edges.csv"
     nodes_file = p / f"{prefix}_nodes.csv"
 
     # Load edges
     lines = []
     try:
-        with edges_file.open('r') as f:
+        with edges_file.open("r") as f:
             header = f.readline().strip().split(",")
-            for line in csv.reader(f, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True):
+            for line in csv.reader(
+                f,
+                quotechar='"',
+                delimiter=",",
+                quoting=csv.QUOTE_ALL,
+                skipinitialspace=True,
+            ):
                 line_list = [c.strip() for c in line]  # Trim whitespace
                 if len(line_list) < len(header):
                     continue  # Skip lines with insufficient data
 
                 try:
-                    u = line_list[header.index("u")].rstrip(',')  # Remove any trailing commas
-                    v = line_list[header.index("v")].rstrip(',')
+                    u = line_list[header.index("u")].rstrip(
+                        ","
+                    )  # Remove any trailing commas
+                    v = line_list[header.index("v")].rstrip(",")
                     osmid = line_list[header.index("osmid")]
                     length = line_list[header.index("length")]
 
                     # Handle potential list data and empty values
-                    osmid = str(eval(osmid)[0]) if isinstance(eval(osmid), list) else osmid
-                    length = str(eval(length)[0]) if isinstance(eval(length), list) else length
+                    osmid = (
+                        str(eval(osmid)[0]) if isinstance(eval(osmid), list) else osmid
+                    )
+                    length = (
+                        str(eval(length)[0])
+                        if isinstance(eval(length), list)
+                        else length
+                    )
 
                     # Build the line string
                     line_string = f"{u} {v} {osmid} {length}"
@@ -417,7 +535,7 @@ def csv_to_ox(p: Path, placeid: str, parameterid: str) -> nx.MultiDiGraph:
             lines,
             nodetype=int,
             data=(("osmid", int), ("length", float)),
-            create_using=nx.MultiDiGraph
+            create_using=nx.MultiDiGraph,
         )
     except FileNotFoundError:
         print(f"Error: The file {edges_file} does not exist.")
@@ -427,9 +545,15 @@ def csv_to_ox(p: Path, placeid: str, parameterid: str) -> nx.MultiDiGraph:
     values_x = {}
     values_y = {}
     try:
-        with nodes_file.open('r') as f:
+        with nodes_file.open("r") as f:
             header = f.readline().strip().split(",")
-            for line in csv.reader(f, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True):
+            for line in csv.reader(
+                f,
+                quotechar='"',
+                delimiter=",",
+                quoting=csv.QUOTE_ALL,
+                skipinitialspace=True,
+            ):
                 line_list = [c.strip() for c in line]  # Trim whitespace
                 if len(line_list) < len(header):
                     continue  # Skip lines with insufficient data
@@ -454,8 +578,10 @@ def csv_to_ox(p: Path, placeid: str, parameterid: str) -> nx.MultiDiGraph:
     return G
 
 
-def csv_to_ig(p: Path, placeid: str, parameterid: str, cleanup: bool = True) -> ig.Graph:
-    """ Load an ig graph from _edges.csv and _nodes.csv
+def csv_to_ig(
+    p: Path, placeid: str, parameterid: str, cleanup: bool = True
+) -> ig.Graph:
+    """Load an ig graph from _edges.csv and _nodes.csv
     The edge file must have attributes u,v,osmid,length
     The node file must have attributes y,x,osmid
     Only these attributes are loaded.
@@ -467,14 +593,16 @@ def csv_to_ig(p: Path, placeid: str, parameterid: str, cleanup: bool = True) -> 
     # Define paths for the nodes and edges CSV files
     nodes_file = p / f"{prefix}_nodes.csv"
     edges_file = p / f"{prefix}_edges.csv"
-    
+
     try:
         n = pd.read_csv(nodes_file)
         e = pd.read_csv(edges_file)
     except FileNotFoundError:
         empty = True
 
-    if compress and cleanup and not SERVER:  # do not clean up on the server as csv is needed in parallel jobs
+    if (
+        compress and cleanup and not SERVER
+    ):  # do not clean up on the server as csv is needed in parallel jobs
         nodes_file.unlink(missing_ok=True)  # Remove nodes file if it exists
         edges_file.unlink(missing_ok=True)  # Remove edges file if it exists
 
@@ -490,67 +618,90 @@ def csv_to_ig(p: Path, placeid: str, parameterid: str, cleanup: bool = True) -> 
 def ig_to_geojson(G):
     linestring_list = []
     for e in G.es():
-        linestring_list.append(geojson.LineString([(e.source_vertex["x"], -e.source_vertex["y"]), (e.target_vertex["x"], -e.target_vertex["y"])]))
+        linestring_list.append(
+            geojson.LineString(
+                [
+                    (e.source_vertex["x"], -e.source_vertex["y"]),
+                    (e.target_vertex["x"], -e.target_vertex["y"]),
+                ]
+            )
+        )
     G_geojson = geojson.GeometryCollection(linestring_list)
     return G_geojson
 
 
-
 # NETWORK GENERATION
+
 
 def convert_to_h3(location, h3_zoom):
     """
-    Converts a given geometry into H3 hexagons, intersects them with the original geometry, 
+    Converts a given geometry into H3 hexagons, intersects them with the original geometry,
     and filters out invalid geometries.
-    
+
     Parameters:
     - location: shapely.geometry object representing the geometry to process.
     - h3_zoom: int, the H3 resolution to use.
-    
+
     Returns:
     - GeoDataFrame with H3 hexagons intersected with the original geometry.
     """
     # Ensure `location` is a GeoDataFrame
     gdf = gpd.GeoDataFrame(geometry=[location], crs="EPSG:4326")
-    
+
     # Convert the original geometries to H3 hexagons
     gdf_hex = h3fy(gdf, resolution=h3_zoom)
-    
+
     # Intersect the H3 hexagons with the original geometries
-    gdf_hex['geometry'] = gdf_hex.geometry.apply(
+    gdf_hex["geometry"] = gdf_hex.geometry.apply(
         lambda x: gdf.geometry.unary_union.intersection(x) if x.is_valid else x
     )
-    
+
     # Remove any invalid geometries
     gdf_hex = gdf_hex[gdf_hex.geometry.is_valid & ~gdf_hex.geometry.is_empty]
-    
+
     return gdf_hex
 
 
 def highest_closeness_node(G):
-    closeness_values = G.closeness(weights = 'weight')
-    sorted_closeness = sorted(closeness_values, reverse = True)
+    closeness_values = G.closeness(weights="weight")
+    sorted_closeness = sorted(closeness_values, reverse=True)
     index = closeness_values.index(sorted_closeness[0])
-    return G.vs(index)['id']
+    return G.vs(index)["id"]
 
-def clusterindices_by_length(clusterinfo, rev = True):
-    return [k for k, v in sorted(clusterinfo.items(), key=lambda item: item[1]["length"], reverse = rev)]
+
+def clusterindices_by_length(clusterinfo, rev=True):
+    return [
+        k
+        for k, v in sorted(
+            clusterinfo.items(), key=lambda item: item[1]["length"], reverse=rev
+        )
+    ]
+
 
 class MyPoint:
-    def __init__(self,x,y):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        
-def ccw(A,B,C):
-    return (C.y-A.y) * (B.x-A.x) > (B.y-A.y) * (C.x-A.x)
 
-def segments_intersect(A,B,C,D):
+
+def ccw(A, B, C):
+    return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x)
+
+
+def segments_intersect(A, B, C, D):
     """Check if two line segments intersect (except for colinearity)
     Returns true if line segments AB and CD intersect properly.
     Adapted from: https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
     """
-    if (A.x == C.x and A.y == C.y) or (A.x == D.x and A.y == D.y) or (B.x == C.x and B.y == C.y) or (B.x == D.x and B.y == D.y): return False # If the segments share an endpoint they do not intersect properly
-    return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
+    if (
+        (A.x == C.x and A.y == C.y)
+        or (A.x == D.x and A.y == D.y)
+        or (B.x == C.x and B.y == C.y)
+        or (B.x == D.x and B.y == D.y)
+    ):
+        return False  # If the segments share an endpoint they do not intersect properly
+    return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
+
 
 def new_edge_intersects(G, enew):
     """Given a graph G and a potential new edge enew,
@@ -564,9 +715,9 @@ def new_edge_intersects(G, enew):
         if segments_intersect(E1, E2, O1, O2):
             return True
     return False
-    
 
-def delete_overlaps(G_res, G_orig, verbose = False):
+
+def delete_overlaps(G_res, G_orig, verbose=False):
     """Deletes inplace all overlaps of G_res with G_orig (from G_res)
     based on node ids. In other words: G_res -= G_orig
     """
@@ -576,8 +727,8 @@ def delete_overlaps(G_res, G_orig, verbose = False):
             n1_id = e.source_vertex["id"]
             n2_id = e.target_vertex["id"]
             # If there is already an edge in the original network, delete it
-            n1_index = G_orig.vs.find(id = n1_id).index
-            n2_index = G_orig.vs.find(id = n2_id).index
+            n1_index = G_orig.vs.find(id=n1_id).index
+            n2_index = G_orig.vs.find(id=n2_id).index
             if G_orig.are_connected(n1_index, n2_index):
                 del_edges.append(e.index)
         except:
@@ -586,114 +737,208 @@ def delete_overlaps(G_res, G_orig, verbose = False):
     # Remove isolated nodes
     isolated_nodes = G_res.vs.select(_degree_eq=0)
     G_res.delete_vertices(isolated_nodes)
-    if verbose: print("Removed " + str(len(del_edges)) + " overlapping edges and " + str(len(isolated_nodes)) + " nodes.")
+    if verbose:
+        print(
+            "Removed "
+            + str(len(del_edges))
+            + " overlapping edges and "
+            + str(len(isolated_nodes))
+            + " nodes."
+        )
 
-def constrict_overlaps(G_res, G_orig, factor = 5):
-    """Increases length by factor of all overlaps of G_res with G_orig (in G_res) based on edge ids.
-    """
+
+def constrict_overlaps(G_res, G_orig, factor=5):
+    """Increases length by factor of all overlaps of G_res with G_orig (in G_res) based on edge ids."""
     for e in list(G_res.es):
         try:
             n1_id = e.source_vertex["id"]
             n2_id = e.target_vertex["id"]
-            n1_index = G_orig.vs.find(id = n1_id).index
-            n2_index = G_orig.vs.find(id = n2_id).index
+            n1_index = G_orig.vs.find(id=n1_id).index
+            n2_index = G_orig.vs.find(id=n2_id).index
             if G_orig.are_connected(n1_index, n2_index):
                 G_res.es[e.index]["weight"] = factor * G_res.es[e.index]["weight"]
         except:
             pass
 
 
-
-def greedy_triangulation_routing_clusters(G, G_total, clusters, clusterinfo, prune_quantiles = [1], prune_measure = "betweenness", verbose = False, full_run = False):
+def greedy_triangulation_routing_clusters(
+    G,
+    G_total,
+    clusters,
+    clusterinfo,
+    prune_quantiles=[1],
+    prune_measure="betweenness",
+    verbose=False,
+    full_run=False,
+):
     """Greedy Triangulation (GT) of a bike network G's clusters,
     then routing on the graph G_total that includes car infra to connect the GT.
     G and G_total are ipgraph graphs
-    
+
     The GT connects pairs of clusters in ascending order of their distance provided
     that no edge crossing is introduced. It leads to a maximal connected planar
-    graph, while minimizing the total length of edges considered. 
+    graph, while minimizing the total length of edges considered.
     See: cardillo2006spp
-    
-    Distance here is routing distance, while edge crossing is checked on an abstract 
+
+    Distance here is routing distance, while edge crossing is checked on an abstract
     level.
     """
-    
-    if len(clusters) < 2: return ([], []) # We can't do anything with less than 2 clusters
 
-    centroid_indices = [v["centroid_index"] for k, v in sorted(clusterinfo.items(), key=lambda item: item[1]["size"], reverse = True)]
+    if len(clusters) < 2:
+        return ([], [])  # We can't do anything with less than 2 clusters
+
+    centroid_indices = [
+        v["centroid_index"]
+        for k, v in sorted(
+            clusterinfo.items(), key=lambda item: item[1]["size"], reverse=True
+        )
+    ]
     G_temp = copy.deepcopy(G_total)
-    for e in G_temp.es: # delete all edges
+    for e in G_temp.es:  # delete all edges
         G_temp.es.delete(e)
-    
-    clusterpairs = clusterpairs_by_distance(G, G_total, clusters, clusterinfo, True, verbose, full_run)
-    if len(clusterpairs) == 0: return ([], [])
-    
-    centroidpairs = [((clusterinfo[c[0][0]]['centroid_id'], clusterinfo[c[0][1]]['centroid_id']), c[2]) for c in clusterpairs]
-    
+
+    clusterpairs = clusterpairs_by_distance(
+        G, G_total, clusters, clusterinfo, True, verbose, full_run
+    )
+    if len(clusterpairs) == 0:
+        return ([], [])
+
+    centroidpairs = [
+        (
+            (clusterinfo[c[0][0]]["centroid_id"], clusterinfo[c[0][1]]["centroid_id"]),
+            c[2],
+        )
+        for c in clusterpairs
+    ]
+
     GT_abstracts = []
     GTs = []
     for prune_quantile in prune_quantiles:
         GT_abstract = copy.deepcopy(G_temp.subgraph(centroid_indices))
-        GT_abstract = greedy_triangulation(GT_abstract, centroidpairs, prune_quantile, prune_measure)
+        GT_abstract = greedy_triangulation(
+            GT_abstract, centroidpairs, prune_quantile, prune_measure
+        )
         GT_abstracts.append(GT_abstract)
 
-        centroidids_closestnodeids = {} # dict for retrieveing quickly closest node ids pairs from centroidid pairs
+        centroidids_closestnodeids = (
+            {}
+        )  # dict for retrieveing quickly closest node ids pairs from centroidid pairs
         for x in clusterpairs:
-            centroidids_closestnodeids[(clusterinfo[x[0][0]]["centroid_id"], clusterinfo[x[0][1]]["centroid_id"])] = (x[1][0], x[1][1])
-            centroidids_closestnodeids[(clusterinfo[x[0][1]]["centroid_id"], clusterinfo[x[0][0]]["centroid_id"])] = (x[1][1], x[1][0]) # also add switched version as we do not care about order
+            centroidids_closestnodeids[
+                (
+                    clusterinfo[x[0][0]]["centroid_id"],
+                    clusterinfo[x[0][1]]["centroid_id"],
+                )
+            ] = (x[1][0], x[1][1])
+            centroidids_closestnodeids[
+                (
+                    clusterinfo[x[0][1]]["centroid_id"],
+                    clusterinfo[x[0][0]]["centroid_id"],
+                )
+            ] = (
+                x[1][1],
+                x[1][0],
+            )  # also add switched version as we do not care about order
 
         # Get node pairs we need to route, sorted by distance
         routenodepairs = []
         for e in GT_abstract.es:
             # get the centroid-ids from closestnode-ids
-            routenodepairs.append([centroidids_closestnodeids[(e.source_vertex["id"], e.target_vertex["id"])], e["weight"]])
+            routenodepairs.append(
+                [
+                    centroidids_closestnodeids[
+                        (e.source_vertex["id"], e.target_vertex["id"])
+                    ],
+                    e["weight"],
+                ]
+            )
 
         routenodepairs.sort(key=lambda x: x[1])
 
         # Do the routing, on G_total
         GT_indices = set()
         for poipair, poipair_distance in routenodepairs:
-            poipair_ind = (G_total.vs.find(id = poipair[0]).index, G_total.vs.find(id = poipair[1]).index)
-            sp = set(G_total.get_shortest_paths(poipair_ind[0], poipair_ind[1], weights = "weight", output = "vpath")[0])
+            poipair_ind = (
+                G_total.vs.find(id=poipair[0]).index,
+                G_total.vs.find(id=poipair[1]).index,
+            )
+            sp = set(
+                G_total.get_shortest_paths(
+                    poipair_ind[0], poipair_ind[1], weights="weight", output="vpath"
+                )[0]
+            )
             GT_indices = GT_indices.union(sp)
 
         GT = G_total.induced_subgraph(GT_indices)
         GTs.append(GT)
-    
-    return(GTs, GT_abstracts)
+
+    return (GTs, GT_abstracts)
 
 
-def clusterpairs_by_distance(G, G_total, clusters, clusterinfo, return_distances = False, verbose = False, full_run = False):
+def clusterpairs_by_distance(
+    G,
+    G_total,
+    clusters,
+    clusterinfo,
+    return_distances=False,
+    verbose=False,
+    full_run=False,
+):
     """Calculates the (weighted) graph distances on G for a number of clusters.
-    Returns all pairs of cluster ids and closest nodes in ascending order of their distance. 
+    Returns all pairs of cluster ids and closest nodes in ascending order of their distance.
     If return_distances, then distances are also returned.
 
     Returns a list containing these elements, sorted by distance:
     [(clusterid1, clusterid2), (closestnodeid1, closestnodeid2), distance]
     """
-    
-    cluster_indices = clusterindices_by_length(clusterinfo, False) # Start with the smallest so the for loop is as short as possible
+
+    cluster_indices = clusterindices_by_length(
+        clusterinfo, False
+    )  # Start with the smallest so the for loop is as short as possible
     clusterpairs = []
     clustercopies = {}
-    
+
     # Create copies of all clusters
     for i in range(len(cluster_indices)):
         clustercopies[i] = clusters[i].copy()
-        
+
     # Take one cluster
     for i, c1 in enumerate(cluster_indices[:-1]):
-        c1_indices = G_total.vs.select(lambda x: x["id"] in clustercopies[c1].vs()["id"]).indices
-        print("Working on cluster " + str(i+1) + " of " + str(len(cluster_indices)) + "...")
-        for j, c2 in enumerate(cluster_indices[i+1:]):
-            closest_pair = {'i': -1, 'j': -1}
+        c1_indices = G_total.vs.select(
+            lambda x: x["id"] in clustercopies[c1].vs()["id"]
+        ).indices
+        print(
+            "Working on cluster "
+            + str(i + 1)
+            + " of "
+            + str(len(cluster_indices))
+            + "..."
+        )
+        for j, c2 in enumerate(cluster_indices[i + 1 :]):
+            closest_pair = {"i": -1, "j": -1}
             min_dist = np.inf
-            c2_indices = G_total.vs.select(lambda x: x["id"] in clustercopies[c2].vs()["id"]).indices
-            if verbose: print("... routing " + str(len(c1_indices)) + " nodes to " + str(len(c2_indices)) + " nodes in other cluster " + str(j+1) + " of " + str(len(cluster_indices[i+1:])) + ".")
-            
+            c2_indices = G_total.vs.select(
+                lambda x: x["id"] in clustercopies[c2].vs()["id"]
+            ).indices
+            if verbose:
+                print(
+                    "... routing "
+                    + str(len(c1_indices))
+                    + " nodes to "
+                    + str(len(c2_indices))
+                    + " nodes in other cluster "
+                    + str(j + 1)
+                    + " of "
+                    + str(len(cluster_indices[i + 1 :]))
+                    + "."
+                )
+
             if full_run:
                 # Compare all pairs of nodes in both clusters (takes long)
                 for a in list(c1_indices):
-                    sp = G_total.get_shortest_paths(a, c2_indices, weights = "weight", output = "epath")
+                    sp = G_total.get_shortest_paths(
+                        a, c2_indices, weights="weight", output="epath"
+                    )
 
                     if all([not elem for elem in sp]):
                         # If there is no path from one node, there is no path from any node
@@ -701,44 +946,52 @@ def clusterpairs_by_distance(G, G_total, clusters, clusterinfo, return_distances
                     else:
                         for path, c2_index in zip(sp, c2_indices):
                             if len(path) >= 1:
-                                dist_nodes = sum([G_total.es[e]['weight'] for e in path])
+                                dist_nodes = sum(
+                                    [G_total.es[e]["weight"] for e in path]
+                                )
                                 if dist_nodes < min_dist:
-                                    closest_pair['i'] = G_total.vs[a]["id"]
-                                    closest_pair['j'] = G_total.vs[c2_index]["id"]
+                                    closest_pair["i"] = G_total.vs[a]["id"]
+                                    closest_pair["j"] = G_total.vs[c2_index]["id"]
                                     min_dist = dist_nodes
             else:
                 # Do a heuristic that should be close enough.
                 # From cluster 1, look at all shortest paths only from its centroid
                 a = clusterinfo[c1]["centroid_index"]
-                sp = G_total.get_shortest_paths(a, c2_indices, weights = "weight", output = "epath")
+                sp = G_total.get_shortest_paths(
+                    a, c2_indices, weights="weight", output="epath"
+                )
                 if all([not elem for elem in sp]):
                     # If there is no path from one node, there is no path from any node
                     break
                 else:
                     for path, c2_index in zip(sp, c2_indices):
                         if len(path) >= 1:
-                            dist_nodes = sum([G_total.es[e]['weight'] for e in path])
+                            dist_nodes = sum([G_total.es[e]["weight"] for e in path])
                             if dist_nodes < min_dist:
-                                closest_pair['j'] = G_total.vs[c2_index]["id"]
+                                closest_pair["j"] = G_total.vs[c2_index]["id"]
                                 min_dist = dist_nodes
                 # Closest c2 node to centroid1 found. Now find all c1 nodes to that closest c2 node.
-                b = G_total.vs.find(id = closest_pair['j']).index
-                sp = G_total.get_shortest_paths(b, c1_indices, weights = "weight", output = "epath")
+                b = G_total.vs.find(id=closest_pair["j"]).index
+                sp = G_total.get_shortest_paths(
+                    b, c1_indices, weights="weight", output="epath"
+                )
                 if all([not elem for elem in sp]):
                     # If there is no path from one node, there is no path from any node
                     break
                 else:
                     for path, c1_index in zip(sp, c1_indices):
                         if len(path) >= 1:
-                            dist_nodes = sum([G_total.es[e]['weight'] for e in path])
-                            if dist_nodes <= min_dist: # <=, not <!
-                                closest_pair['i'] = G_total.vs[c1_index]["id"]
+                            dist_nodes = sum([G_total.es[e]["weight"] for e in path])
+                            if dist_nodes <= min_dist:  # <=, not <!
+                                closest_pair["i"] = G_total.vs[c1_index]["id"]
                                 min_dist = dist_nodes
-            
-            if closest_pair['i'] != -1 and closest_pair['j'] != -1:
-                clusterpairs.append([(c1, c2), (closest_pair['i'], closest_pair['j']), min_dist])
-                                    
-    clusterpairs.sort(key = lambda x: x[-1])
+
+            if closest_pair["i"] != -1 and closest_pair["j"] != -1:
+                clusterpairs.append(
+                    [(c1, c2), (closest_pair["i"], closest_pair["j"]), min_dist]
+                )
+
+    clusterpairs.sort(key=lambda x: x[-1])
     if return_distances:
         return clusterpairs
     else:
@@ -749,234 +1002,287 @@ def mst_routing(G, G_carall, pois):
     """Minimum Spanning Tree (MST) of a graph G's node subset pois,
     then routing to connect the MST.
     G is an ipgraph graph, pois is a list of node ids.
-    
-    The MST is the planar graph with the minimum number of (weighted) 
+
+    The MST is the planar graph with the minimum number of (weighted)
     links in order to assure connectedness.
 
-    Distance here is routing distance, while edge crossing is checked on an abstract 
+    Distance here is routing distance, while edge crossing is checked on an abstract
     level.
     """
 
-    if len(pois) < 2: return (ig.Graph(), ig.Graph()) # We can't do anything with less than 2 POIs
+    if len(pois) < 2:
+        return (ig.Graph(), ig.Graph())  # We can't do anything with less than 2 POIs
 
     # MST_abstract is the MST with same nodes but euclidian links
     pois_indices = set()
     for poi in pois:
-        pois_indices.add(G.vs.find(id = poi).index)
+        pois_indices.add(G.vs.find(id=poi).index)
     G_temp = copy.deepcopy(G)
-    for e in G_temp.es: # delete all edges
+    for e in G_temp.es:  # delete all edges
         G_temp.es.delete(e)
-        
-    poipairs = poipairs_by_distance(G,G_carall, pois, True)
-    if len(poipairs) == 0: return (ig.Graph(), ig.Graph())
+
+    poipairs = poipairs_by_distance(G, G_carall, pois, True)
+    if len(poipairs) == 0:
+        return (ig.Graph(), ig.Graph())
 
     MST_abstract = copy.deepcopy(G_temp.subgraph(pois_indices))
     for poipair, poipair_distance in poipairs:
-        poipair_ind = (MST_abstract.vs.find(id = poipair[0]).index, MST_abstract.vs.find(id = poipair[1]).index)
-        MST_abstract.add_edge(poipair_ind[0], poipair_ind[1] , weight = poipair_distance)
-    MST_abstract = MST_abstract.spanning_tree(weights = "weight")
+        poipair_ind = (
+            MST_abstract.vs.find(id=poipair[0]).index,
+            MST_abstract.vs.find(id=poipair[1]).index,
+        )
+        MST_abstract.add_edge(poipair_ind[0], poipair_ind[1], weight=poipair_distance)
+    MST_abstract = MST_abstract.spanning_tree(weights="weight")
 
     # Get node pairs we need to route, sorted by distance
     routenodepairs = {}
     for e in MST_abstract.es:
         routenodepairs[(e.source_vertex["id"], e.target_vertex["id"])] = e["weight"]
-    routenodepairs = sorted(routenodepairs.items(), key = lambda x: x[1])
+    routenodepairs = sorted(routenodepairs.items(), key=lambda x: x[1])
 
     # Do the routing
     MST_indices = set()
     for poipair, poipair_distance in routenodepairs:
-        poipair_ind = (G.vs.find(id = poipair[0]).index, G.vs.find(id = poipair[1]).index)
-        sp = set(G.get_shortest_paths(poipair_ind[0], poipair_ind[1], weights = "weight", output = "vpath")[0])
+        poipair_ind = (G.vs.find(id=poipair[0]).index, G.vs.find(id=poipair[1]).index)
+        sp = set(
+            G.get_shortest_paths(
+                poipair_ind[0], poipair_ind[1], weights="weight", output="vpath"
+            )[0]
+        )
         MST_indices = MST_indices.union(sp)
 
     MST = G.induced_subgraph(MST_indices)
-    
+
     return (MST, MST_abstract)
 
 
-
-def greedy_triangulation(GT, poipairs, prune_quantile = 1, prune_measure = "betweenness", edgeorder = False):
+def greedy_triangulation(
+    GT, poipairs, prune_quantile=1, prune_measure="betweenness", edgeorder=False
+):
     """Greedy Triangulation (GT) of a graph GT with an empty edge set.
     Distances between pairs of nodes are given by poipairs.
-    
+
     The GT connects pairs of nodes in ascending order of their distance provided
     that no edge crossing is introduced. It leads to a maximal connected planar
-    graph, while minimizing the total length of edges considered. 
+    graph, while minimizing the total length of edges considered.
     See: cardillo2006spp
     """
-    
+
     for poipair, poipair_distance in poipairs:
-        poipair_ind = (GT.vs.find(id = poipair[0]).index, GT.vs.find(id = poipair[1]).index)
-        if not new_edge_intersects(GT, (GT.vs[poipair_ind[0]]["x"], GT.vs[poipair_ind[0]]["y"], GT.vs[poipair_ind[1]]["x"], GT.vs[poipair_ind[1]]["y"])):
-            GT.add_edge(poipair_ind[0], poipair_ind[1], weight = poipair_distance)
-            
+        poipair_ind = (GT.vs.find(id=poipair[0]).index, GT.vs.find(id=poipair[1]).index)
+        if not new_edge_intersects(
+            GT,
+            (
+                GT.vs[poipair_ind[0]]["x"],
+                GT.vs[poipair_ind[0]]["y"],
+                GT.vs[poipair_ind[1]]["x"],
+                GT.vs[poipair_ind[1]]["y"],
+            ),
+        ):
+            GT.add_edge(poipair_ind[0], poipair_ind[1], weight=poipair_distance)
+
     # Get the measure for pruning
     if prune_measure == "betweenness":
-        BW = GT.edge_betweenness(directed = False, weights = "weight")
-        qt = np.quantile(BW, 1-prune_quantile)
+        BW = GT.edge_betweenness(directed=False, weights="weight")
+        qt = np.quantile(BW, 1 - prune_quantile)
         sub_edges = []
         for c, e in enumerate(GT.es):
-            if BW[c] >= qt: 
+            if BW[c] >= qt:
                 sub_edges.append(c)
             GT.es[c]["bw"] = BW[c]
-            GT.es[c]["width"] = math.sqrt(BW[c]+1)*0.5
+            GT.es[c]["width"] = math.sqrt(BW[c] + 1) * 0.5
         # Prune
         GT = GT.subgraph_edges(sub_edges)
     elif prune_measure == "closeness":
-        CC = GT.closeness(vertices = None, weights = "weight")
-        qt = np.quantile(CC, 1-prune_quantile)
+        CC = GT.closeness(vertices=None, weights="weight")
+        qt = np.quantile(CC, 1 - prune_quantile)
         sub_nodes = []
         for c, v in enumerate(GT.vs):
-            if CC[c] >= qt: 
+            if CC[c] >= qt:
                 sub_nodes.append(c)
             GT.vs[c]["cc"] = CC[c]
         GT = GT.induced_subgraph(sub_nodes)
     elif prune_measure == "random":
-        ind = np.quantile(np.arange(len(edgeorder)), prune_quantile, interpolation = "lower") + 1 # "lower" and + 1 so smallest quantile has at least one edge
+        ind = (
+            np.quantile(
+                np.arange(len(edgeorder)), prune_quantile, interpolation="lower"
+            )
+            + 1
+        )  # "lower" and + 1 so smallest quantile has at least one edge
         GT = GT.subgraph_edges(edgeorder[:ind])
-    
+
     return GT
 
 
-def greedy_triangulation_routing(G, G_carall, pois, prune_quantiles = [1], prune_measure = "betweenness"):
+def greedy_triangulation_routing(
+    G, G_carall, pois, prune_quantiles=[1], prune_measure="betweenness"
+):
     """Greedy Triangulation (GT) of a graph G's node subset pois,
     then routing to connect the GT (up to a quantile of betweenness
     betweenness_quantile).
     G is an ipgraph graph, pois is a list of node ids.
-    
+
     The GT connects pairs of nodes in ascending order of their distance provided
     that no edge crossing is introduced. It leads to a maximal connected planar
-    graph, while minimizing the total length of edges considered. 
+    graph, while minimizing the total length of edges considered.
     See: cardillo2006spp
-    
-    Distance here is routing distance, while edge crossing is checked on an abstract 
+
+    Distance here is routing distance, while edge crossing is checked on an abstract
     level.
     """
-    
-    if len(pois) < 2: return ([], []) # We can't do anything with less than 2 POIs
+
+    if len(pois) < 2:
+        return ([], [])  # We can't do anything with less than 2 POIs
     # GT_abstract is the GT with same nodes but euclidian links to keep track of edge crossings
     pois_indices = set()
     for poi in pois:
-        pois_indices.add(G.vs.find(id = poi).index)
+        pois_indices.add(G.vs.find(id=poi).index)
     G_temp = copy.deepcopy(G)
-    for e in G_temp.es: # delete all edges
+    for e in G_temp.es:  # delete all edges
         G_temp.es.delete(e)
-        
+
     poipairs = poipairs_by_distance(G, G_carall, pois, True)
-    if len(poipairs) == 0: return ([], [])
+    if len(poipairs) == 0:
+        return ([], [])
 
     if prune_measure == "random":
         # run the whole GT first
         GT = copy.deepcopy(G_temp.subgraph(pois_indices))
         for poipair, poipair_distance in poipairs:
-            poipair_ind = (GT.vs.find(id = poipair[0]).index, GT.vs.find(id = poipair[1]).index)
-            if not new_edge_intersects(GT, (GT.vs[poipair_ind[0]]["x"], GT.vs[poipair_ind[0]]["y"], GT.vs[poipair_ind[1]]["x"], GT.vs[poipair_ind[1]]["y"])):
-                GT.add_edge(poipair_ind[0], poipair_ind[1], weight = poipair_distance)
+            poipair_ind = (
+                GT.vs.find(id=poipair[0]).index,
+                GT.vs.find(id=poipair[1]).index,
+            )
+            if not new_edge_intersects(
+                GT,
+                (
+                    GT.vs[poipair_ind[0]]["x"],
+                    GT.vs[poipair_ind[0]]["y"],
+                    GT.vs[poipair_ind[1]]["x"],
+                    GT.vs[poipair_ind[1]]["y"],
+                ),
+            ):
+                GT.add_edge(poipair_ind[0], poipair_ind[1], weight=poipair_distance)
         # create a random order for the edges
-        random.seed(0) # const seed for reproducibility
-        edgeorder = random.sample(range(GT.ecount()), k = GT.ecount())
-    else: 
+        random.seed(0)  # const seed for reproducibility
+        edgeorder = random.sample(range(GT.ecount()), k=GT.ecount())
+    else:
         edgeorder = False
-    
+
     GT_abstracts = []
     GTs = []
-    for prune_quantile in tqdm(prune_quantiles, desc = "Greedy triangulation", leave = False):
+    for prune_quantile in tqdm(
+        prune_quantiles, desc="Greedy triangulation", leave=False
+    ):
         GT_abstract = copy.deepcopy(G_temp.subgraph(pois_indices))
-        GT_abstract = greedy_triangulation(GT_abstract, poipairs, prune_quantile, prune_measure, edgeorder)
+        GT_abstract = greedy_triangulation(
+            GT_abstract, poipairs, prune_quantile, prune_measure, edgeorder
+        )
         GT_abstracts.append(GT_abstract)
-        
+
         # Get node pairs we need to route, sorted by distance
         routenodepairs = {}
         for e in GT_abstract.es:
             routenodepairs[(e.source_vertex["id"], e.target_vertex["id"])] = e["weight"]
-        routenodepairs = sorted(routenodepairs.items(), key = lambda x: x[1])
+        routenodepairs = sorted(routenodepairs.items(), key=lambda x: x[1])
 
         # Do the routing
         GT_indices = set()
         for poipair, poipair_distance in routenodepairs:
-            poipair_ind = (G.vs.find(id = poipair[0]).index, G.vs.find(id = poipair[1]).index)
-            sp = set(G.get_shortest_paths(poipair_ind[0], poipair_ind[1], weights = "weight", output = "vpath")[0])
+            poipair_ind = (
+                G.vs.find(id=poipair[0]).index,
+                G.vs.find(id=poipair[1]).index,
+            )
+            sp = set(
+                G.get_shortest_paths(
+                    poipair_ind[0], poipair_ind[1], weights="weight", output="vpath"
+                )[0]
+            )
             GT_indices = GT_indices.union(sp)
 
         GT = G.induced_subgraph(GT_indices)
         GTs.append(GT)
-    
+
     return (GTs, GT_abstracts)
-    
-    
-def poipairs_by_distance(G, G_carall, pois, return_distances = False):
+
+
+def poipairs_by_distance(G, G_carall, pois, return_distances=False):
     """Calculates the (weighted) graph distances on G for a subset of nodes pois.
-    Returns all pairs of poi ids in ascending order of their distance. 
+    Returns all pairs of poi ids in ascending order of their distance.
     If return_distances, then distances are also returned.
     """
-    
+
     if not isinstance(pois, (list, set, tuple)):
-        
-        raise ValueError("Expected pois to be a list, set, or tuple of points of interest, but got:", type(pois),print(pois))
-    
-    
-    
+
+        raise ValueError(
+            "Expected pois to be a list, set, or tuple of points of interest, but got:",
+            type(pois),
+            print(pois),
+        )
+
     # Get poi indices
     indices = []
     for poi in pois:
-        indices.append(G_carall.vs.find(id = poi).index)
-    
+        indices.append(G_carall.vs.find(id=poi).index)
+
     # Get sequences of nodes and edges in shortest paths between all pairs of pois
     poi_nodes = []
     poi_edges = []
     for c, v in enumerate(indices):
-        poi_nodes.append(G.get_shortest_paths(v, indices[c:], weights = "weight", output = "vpath"))
-        poi_edges.append(G.get_shortest_paths(v, indices[c:], weights = "weight", output = "epath"))
+        poi_nodes.append(
+            G.get_shortest_paths(v, indices[c:], weights="weight", output="vpath")
+        )
+        poi_edges.append(
+            G.get_shortest_paths(v, indices[c:], weights="weight", output="epath")
+        )
 
     # Sum up weights (distances) of all paths
     poi_dist = {}
     for paths_n, paths_e in zip(poi_nodes, poi_edges):
         for path_n, path_e in zip(paths_n, paths_e):
             # Sum up distances of path segments from first to last node
-            path_dist = sum([G.es[e]['weight'] for e in path_e])
+            path_dist = sum([G.es[e]["weight"] for e in path_e])
             if path_dist > 0:
-                poi_dist[(path_n[0],path_n[-1])] = path_dist
-            
-    temp = sorted(poi_dist.items(), key = lambda x: x[1])
+                poi_dist[(path_n[0], path_n[-1])] = path_dist
+
+    temp = sorted(poi_dist.items(), key=lambda x: x[1])
     # Back to ids
     output = []
     for p in temp:
         output.append([(G.vs[p[0][0]]["id"], G.vs[p[0][1]]["id"]), p[1]])
-    
+
     if return_distances:
         return output
     else:
         return [o[0] for o in output]
 
 
-
-
-
 # ANALYSIS
 
-def rotate_grid(p, origin = (0, 0), degrees = 0):
-        """Rotate a list of points around an origin (in 2D). 
-        
-        Parameters:
-            p (tuple or list of tuples): (x,y) coordinates of points to rotate
-            origin (tuple): (x,y) coordinates of rotation origin
-            degrees (int or float): degree (clockwise)
 
-        Returns:
-            ndarray: the rotated points, as an ndarray of 1x2 ndarrays
-        """
-        # https://stackoverflow.com/questions/34372480/rotate-point-about-another-point-in-degrees-python
-        angle = np.deg2rad(-degrees)
-        R = np.array([[np.cos(angle), -np.sin(angle)],
-                      [np.sin(angle),  np.cos(angle)]])
-        o = np.atleast_2d(origin)
-        p = np.atleast_2d(p)
-        return np.squeeze((R @ (p.T-o.T) + o.T).T)
+def rotate_grid(p, origin=(0, 0), degrees=0):
+    """Rotate a list of points around an origin (in 2D).
+
+    Parameters:
+        p (tuple or list of tuples): (x,y) coordinates of points to rotate
+        origin (tuple): (x,y) coordinates of rotation origin
+        degrees (int or float): degree (clockwise)
+
+    Returns:
+        ndarray: the rotated points, as an ndarray of 1x2 ndarrays
+    """
+    # https://stackoverflow.com/questions/34372480/rotate-point-about-another-point-in-degrees-python
+    angle = np.deg2rad(-degrees)
+    R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    o = np.atleast_2d(origin)
+    p = np.atleast_2d(p)
+    return np.squeeze((R @ (p.T - o.T) + o.T).T)
 
 
 # Two functions from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
 def reverse_bearing(x):
     return x + 180 if x < 180 else x - 180
+
 
 def count_and_merge(n, bearings):
     # make twice as many bins as desired, then merge them in pairs
@@ -984,7 +1290,7 @@ def count_and_merge(n, bearings):
     n = n * 2
     bins = np.arange(n + 1) * 360 / n
     count, _ = np.histogram(bearings, bins=bins)
-    
+
     # move the last bin to the front, so eg 0.01° and 359.99° will be binned together
     count = np.roll(count, 1)
     return count[::2] + count[1::2]
@@ -994,7 +1300,7 @@ def calculate_directness(G, numnodepairs=500):
     """Calculate directness on G over all connected node pairs in indices.
     This calculation method divides the total sum of Euclidean distances by total sum of network distances.
     """
-    
+
     indices = random.sample(range(len(G.vs)), min(numnodepairs, len(G.vs)))
 
     total_distance_direct = 0
@@ -1002,32 +1308,40 @@ def calculate_directness(G, numnodepairs=500):
 
     for c, v in enumerate(indices):
         # Get shortest paths from node v to other nodes in the indices
-        temp_paths = G.get_shortest_paths(v, indices[c:], weights="weight", output="vpath")
-        temp_edges = G.get_shortest_paths(v, indices[c:], weights="weight", output="epath")
-        
+        temp_paths = G.get_shortest_paths(
+            v, indices[c:], weights="weight", output="vpath"
+        )
+        temp_edges = G.get_shortest_paths(
+            v, indices[c:], weights="weight", output="epath"
+        )
+
         for path, edges in zip(temp_paths, temp_edges):
             if len(path) > 1:  # Ensure there are at least two nodes in the path
                 # Ensure coords is 2D: (n, 2), where each row is (y, x)
                 coords = np.array([(G.vs[t]["y"], G.vs[t]["x"]) for t in path])
 
                 # Calculate Euclidean distances for each consecutive pair of coordinates
-                direct_dist = np.sum(np.linalg.norm(coords[1:] - coords[:-1], axis=1))  
+                direct_dist = np.sum(np.linalg.norm(coords[1:] - coords[:-1], axis=1))
                 total_distance_direct += direct_dist
-            
+
                 # Calculate network distance (sum of edge weights)
-                network_dist = np.sum([G.es[e]['weight'] for e in edges])
+                network_dist = np.sum([G.es[e]["weight"] for e in edges])
                 total_distance_network += network_dist
 
-    return total_distance_direct / total_distance_network if total_distance_network != 0 else 0
+    return (
+        total_distance_direct / total_distance_network
+        if total_distance_network != 0
+        else 0
+    )
 
 
 def calculate_directness_linkwise(G, numnodepairs=500):
     """Calculate directness on G over all connected node pairs in indices.
     This is the common calculation method: It takes the average of linkwise Euclidean distances divided by network distances.
-    
+
     If G has multiple components, node pairs in different components are discarded.
     """
-    
+
     # Select random node indices, ensure no index exceeds the total number of vertices
     indices = random.sample(range(len(G.vs)), min(numnodepairs, len(G.vs)))
 
@@ -1037,26 +1351,32 @@ def calculate_directness_linkwise(G, numnodepairs=500):
 
     # Precompute coordinates and edge weights to avoid repeated lookups
     coords = np.array([(G.vs[t]["y"], G.vs[t]["x"]) for t in range(len(G.vs))])
-    
+
     # Function to calculate Euclidean distance between two points
     def euclidean_distance(i, j):
         return np.linalg.norm(coords[i] - coords[j])
 
     for c, v in enumerate(indices):
-        poi_edges = G.get_shortest_paths(v, indices[c:], weights="weight", output="epath")
-        
-        for c_delta, path_e in enumerate(poi_edges[1:]):  # Discard first empty list (node to itself)
-            if path_e:  # If path is non-empty, meaning the node pair is in the same component
+        poi_edges = G.get_shortest_paths(
+            v, indices[c:], weights="weight", output="epath"
+        )
+
+        for c_delta, path_e in enumerate(
+            poi_edges[1:]
+        ):  # Discard first empty list (node to itself)
+            if (
+                path_e
+            ):  # If path is non-empty, meaning the node pair is in the same component
                 # Calculate network distance (sum of edge weights)
-                distance_network = sum([G.es[e]['weight'] for e in path_e])
-                
+                distance_network = sum([G.es[e]["weight"] for e in path_e])
+
                 # Calculate Euclidean distance between nodes
                 distance_direct = euclidean_distance(v, indices[c + c_delta + 1])
 
                 # Store the link-wise directness
                 directness_links[ind] = distance_direct / distance_network
                 ind += 1
-    
+
     # Truncate the array to the actual size (discard disconnected node pairs)
     directness_links = directness_links[:ind]
 
@@ -1064,11 +1384,16 @@ def calculate_directness_linkwise(G, numnodepairs=500):
     return np.mean(directness_links) if ind > 0 else 0
 
 
-def listmean(lst): 
-    try: return sum(lst) / len(lst)
-    except: return 0
+def listmean(lst):
+    try:
+        return sum(lst) / len(lst)
+    except:
+        return 0
 
-def calculate_coverage_edges(G, buffer_m = 500, return_cov = False, G_prev = ig.Graph(), cov_prev = Polygon()):
+
+def calculate_coverage_edges(
+    G, buffer_m=500, return_cov=False, G_prev=ig.Graph(), cov_prev=Polygon()
+):
     """Calculates the area and shape covered by the graph's edges.
     If G_prev and cov_prev are given, only the difference between G and G_prev are calculated, then added to cov_prev.
     """
@@ -1077,36 +1402,53 @@ def calculate_coverage_edges(G, buffer_m = 500, return_cov = False, G_prev = ig.
     delete_overlaps(G_added, G_prev)
 
     # https://gis.stackexchange.com/questions/121256/creating-a-circle-with-radius-in-metres
-    lon_coords = np.array(G.vs['x'])
-    lat_coords = np.array(G.vs['y'])
+    lon_coords = np.array(G.vs["x"])
+    lat_coords = np.array(G.vs["y"])
     loncenter = np.mean(lon_coords)
     latcenter = np.mean(lat_coords)
-    local_azimuthal_projection = "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(latcenter, loncenter)
+    local_azimuthal_projection = (
+        "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(
+            latcenter, loncenter
+        )
+    )
     # Use transformer: https://gis.stackexchange.com/questions/127427/transforming-shapely-polygon-and-multipolygon-objects
     wgs84_to_aeqd = pyproj.Transformer.from_proj(
         pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
-        pyproj.Proj(local_azimuthal_projection))
+        pyproj.Proj(local_azimuthal_projection),
+    )
     aeqd_to_wgs84 = pyproj.Transformer.from_proj(
         pyproj.Proj(local_azimuthal_projection),
-        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"))
-    edgetuples = [((e.source_vertex["x"], e.source_vertex["y"]), (e.target_vertex["x"], e.target_vertex["y"])) for e in G_added.es]
+        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
+    )
+    edgetuples = [
+        (
+            (e.source_vertex["x"], e.source_vertex["y"]),
+            (e.target_vertex["x"], e.target_vertex["y"]),
+        )
+        for e in G_added.es
+    ]
     # Shapely buffer seems slow for complex objects: https://stackoverflow.com/questions/57753813/speed-up-shapely-buffer
     # Therefore we buffer piecewise.
     cov_added = Polygon()
     for c, t in enumerate(edgetuples):
         # if cov.geom_type == 'MultiPolygon' and c % 1000 == 0: print(str(c)+"/"+str(len(edgetuples)), sum([len(pol.exterior.coords) for pol in cov]))
         # elif cov.geom_type == 'Polygon' and c % 1000 == 0: print(str(c)+"/"+str(len(edgetuples)), len(pol.exterior.coords))
-        buf = ops.transform(aeqd_to_wgs84.transform, ops.transform(wgs84_to_aeqd.transform, LineString(t)).buffer(buffer_m))
+        buf = ops.transform(
+            aeqd_to_wgs84.transform,
+            ops.transform(wgs84_to_aeqd.transform, LineString(t)).buffer(buffer_m),
+        )
         cov_added = ops.unary_union([cov_added, Polygon(buf)])
 
     # Merge with cov_prev
-    if not cov_added.is_empty: # We need this check because apparently an empty Polygon adds an area.
+    if (
+        not cov_added.is_empty
+    ):  # We need this check because apparently an empty Polygon adds an area.
         cov = ops.unary_union([cov_added, cov_prev])
     else:
         cov = cov_prev
 
     cov_transformed = ops.transform(wgs84_to_aeqd.transform, cov)
-    covered_area = cov_transformed.area / 1000000 # turn from m2 to km2
+    covered_area = cov_transformed.area / 1000000  # turn from m2 to km2
 
     if return_cov:
         return (covered_area, cov)
@@ -1115,46 +1457,47 @@ def calculate_coverage_edges(G, buffer_m = 500, return_cov = False, G_prev = ig.
 
 
 def calculate_poiscovered(G, cov, nnids):
-    """Calculates how many nodes, given by nnids, are covered by the shapely (multi)polygon cov
-    """
-    
+    """Calculates how many nodes, given by nnids, are covered by the shapely (multi)polygon cov"""
+
     pois_indices = set()
     for poi in nnids:
-        pois_indices.add(G.vs.find(id = poi).index)
+        pois_indices.add(G.vs.find(id=poi).index)
 
     poiscovered = 0
     for poi in pois_indices:
         v = G.vs[poi]
         if Point(v["x"], v["y"]).within(cov):
             poiscovered += 1
-    
+
     return poiscovered
 
 
-def calculate_efficiency_global(G, numnodepairs = 500, normalized = True):
+def calculate_efficiency_global(G, numnodepairs=500, normalized=True):
     """Calculates global network efficiency.
-    If there are more than numnodepairs nodes, measure over pairings of a 
+    If there are more than numnodepairs nodes, measure over pairings of a
     random sample of numnodepairs nodes.
     """
 
-    if G is None: return 0
+    if G is None:
+        return 0
 
-    nodeindices = random.sample(G.vs.indices, numnodepairs) if G.vcount() > numnodepairs else list(G.vs.indices)
+    nodeindices = (
+        random.sample(G.vs.indices, numnodepairs)
+        if G.vcount() > numnodepairs
+        else list(G.vs.indices)
+    )
 
-    d_ij = G.shortest_paths(source = nodeindices, target = nodeindices, weights = "weight")
-    d_ij = itertools.chain.from_iterable(d_ij) # flatten
+    d_ij = G.shortest_paths(source=nodeindices, target=nodeindices, weights="weight")
+    d_ij = itertools.chain.from_iterable(d_ij)  # flatten
 
-    EG = sum([1/d for d in d_ij if d != 0])
+    EG = sum([1 / d for d in d_ij if d != 0])
     if not normalized:
-         return EG
-
+        return EG
 
     node_positions = {idx: (v["y"], v["x"]) for idx, v in enumerate(G.vs)}
     pairs = list(itertools.permutations(nodeindices, 2))
 
-    l_ij = [
-        haversine(node_positions[p[0]], node_positions[p[1]]) for p in pairs
-    ]
+    l_ij = [haversine(node_positions[p[0]], node_positions[p[1]]) for p in pairs]
 
     EG_id = sum(1 / l for l in l_ij if l != 0)
 
@@ -1171,16 +1514,20 @@ def calculate_efficiency_global(G, numnodepairs = 500, normalized = True):
     return EG / EG_id if EG_id > 0 else 0
 
 
-def calculate_efficiency_local(G, numnodepairs = 500, normalized = True):
+def calculate_efficiency_local(G, numnodepairs=500, normalized=True):
     """Calculates local network efficiency.
-    If there are more than numnodepairs nodes, measure over pairings of a 
+    If there are more than numnodepairs nodes, measure over pairings of a
     random sample of numnodepairs nodes.
     """
 
-    if G is None: 
+    if G is None:
         return 0
-    
-    nodeindices = random.sample(G.vs.indices, numnodepairs) if G.vcount() > numnodepairs else list(G.vs.indices)
+
+    nodeindices = (
+        random.sample(G.vs.indices, numnodepairs)
+        if G.vcount() > numnodepairs
+        else list(G.vs.indices)
+    )
 
     EGi = [
         calculate_efficiency_global(
@@ -1191,47 +1538,83 @@ def calculate_efficiency_local(G, numnodepairs = 500, normalized = True):
     ]
     return listmean(EGi) if EGi else 0
 
+
 import logging
 
-def calculate_metric(metric, G, GT_abstract, G_big, nnids, cl, G_prev, cov_prev, buffer_walk, numnodepairs, verbose, return_cov, Gexisting, calcmetrics = {"length": 0, "length_lcc": 0, "coverage": 0, "directness": 0}, ignore_GT_abstract = False):
+
+def calculate_metric(
+    metric,
+    G,
+    GT_abstract,
+    G_big,
+    nnids,
+    cl,
+    G_prev,
+    cov_prev,
+    buffer_walk,
+    numnodepairs,
+    verbose,
+    return_cov,
+    Gexisting,
+    calcmetrics={"length": 0, "length_lcc": 0, "coverage": 0, "directness": 0},
+    ignore_GT_abstract=False,
+):
     """Calculate the requested metric and return the result."""
     result = {}
-    
+
     if metric == "efficiency_global" and not ignore_GT_abstract:
-        if verbose: logging.info("Calculating efficiency_global...")
-        result["efficiency_global"] = calculate_efficiency_global(GT_abstract, numnodepairs)
+        if verbose:
+            logging.info("Calculating efficiency_global...")
+        result["efficiency_global"] = calculate_efficiency_global(
+            GT_abstract, numnodepairs
+        )
         logging.info("Efficiency Global: %s", result["efficiency_global"])
 
     elif metric == "efficiency_local" and not ignore_GT_abstract:
-        if verbose: logging.info("Calculating efficiency_local...")
-        result["efficiency_local"] = calculate_efficiency_local(GT_abstract, numnodepairs)
+        if verbose:
+            logging.info("Calculating efficiency_local...")
+        result["efficiency_local"] = calculate_efficiency_local(
+            GT_abstract, numnodepairs
+        )
         logging.info("Efficiency Local: %s", result["efficiency_local"])
-        
+
     elif metric == "efficiency_global_routed":
         try:
-            if verbose: logging.info("Calculating efficiency_global_routed...")
+            if verbose:
+                logging.info("Calculating efficiency_global_routed...")
             simplified_G = simplify_ig(G)
-            result["efficiency_global_routed"] = calculate_efficiency_global(simplified_G, numnodepairs)
-            logging.info("Efficiency Global Routed: %s", result["efficiency_global_routed"])
+            result["efficiency_global_routed"] = calculate_efficiency_global(
+                simplified_G, numnodepairs
+            )
+            logging.info(
+                "Efficiency Global Routed: %s", result["efficiency_global_routed"]
+            )
         except Exception as e:
             logging.error("Error calculating efficiency_global_routed: %s", e)
 
     elif metric == "efficiency_local_routed":
         try:
-            if verbose: logging.info("Calculating efficiency_local_routed...")
-            result["efficiency_local_routed"] = calculate_efficiency_local(simplified_G, numnodepairs)
-            logging.info("Efficiency Local Routed: %s", result["efficiency_local_routed"])
+            if verbose:
+                logging.info("Calculating efficiency_local_routed...")
+            result["efficiency_local_routed"] = calculate_efficiency_local(
+                simplified_G, numnodepairs
+            )
+            logging.info(
+                "Efficiency Local Routed: %s", result["efficiency_local_routed"]
+            )
         except Exception as e:
             logging.error("Error calculating efficiency_local_routed: %s", e)
 
     elif metric == "length":
-        if verbose: logging.info("Calculating length...")
+        if verbose:
+            logging.info("Calculating length...")
         weights = np.array(G.es["weight"])
         result["length"] = np.sum(weights)
         logging.info("Length: %s", result["length"])
 
     elif metric == "length_lcc":
-        if verbose: logging.info("Calculating length_lcc...")
+        if verbose:
+            logging.info("Calculating length_lcc...")
         if len(cl) > 1:
             lcc_weights = np.array(cl.giant().es["weight"])
             result["length_lcc"] = np.sum(lcc_weights)
@@ -1240,15 +1623,18 @@ def calculate_metric(metric, G, GT_abstract, G_big, nnids, cl, G_prev, cov_prev,
         logging.info("Length LCC: %s", result["length_lcc"])
 
     elif metric == "coverage":
-        if verbose: logging.info("Calculating coverage...")
-        covered_area, cov = calculate_coverage_edges(G, buffer_walk, return_cov, G_prev, cov_prev)
+        if verbose:
+            logging.info("Calculating coverage...")
+        covered_area, cov = calculate_coverage_edges(
+            G, buffer_walk, return_cov, G_prev, cov_prev
+        )
         result["coverage"] = covered_area
         logging.info("Coverage: %s", result["coverage"])
 
         if Gexisting:
             overlap_metrics = {
                 "overlap_biketrack": Gexisting.get("biketrack"),
-                "overlap_bikeable": Gexisting.get("bikeable")
+                "overlap_bikeable": Gexisting.get("bikeable"),
             }
             for key, graph in overlap_metrics.items():
                 if key in calcmetrics:
@@ -1259,22 +1645,26 @@ def calculate_metric(metric, G, GT_abstract, G_big, nnids, cl, G_prev, cov_prev,
                     logging.info("%s: %s", key, result[key])
 
     elif metric == "poi_coverage":
-        if verbose: logging.info("Calculating POI coverage...")
+        if verbose:
+            logging.info("Calculating POI coverage...")
         result["poi_coverage"] = calculate_poiscovered(G_big, cov, nnids)
         logging.info("POI Coverage: %s", result["poi_coverage"])
 
     elif metric == "components":
-        if verbose: logging.info("Calculating components...")
+        if verbose:
+            logging.info("Calculating components...")
         result["components"] = sum(1 for _ in G.components())
         logging.info("Components: %s", result["components"])
 
     elif metric == "directness":
-        if verbose: logging.info("Calculating directness...")
+        if verbose:
+            logging.info("Calculating directness...")
         result["directness"] = calculate_directness(G, numnodepairs)
         logging.info("Directness: %s", result["directness"])
 
     elif metric == "directness_lcc":
-        if verbose: logging.info("Calculating directness_lcc...")
+        if verbose:
+            logging.info("Calculating directness_lcc...")
         if len(cl) > 1:
             result["directness_lcc"] = calculate_directness(cl.giant(), numnodepairs)
         else:
@@ -1282,28 +1672,47 @@ def calculate_metric(metric, G, GT_abstract, G_big, nnids, cl, G_prev, cov_prev,
         logging.info("Directness LCC: %s", result["directness_lcc"])
 
     elif metric == "directness_lcc_linkwise":
-        if verbose: logging.info("Calculating directness linkwise...")
+        if verbose:
+            logging.info("Calculating directness linkwise...")
         if len(cl) > 1:
-            result["directness_lcc_linkwise"] = calculate_directness_linkwise(cl.giant(), numnodepairs)
+            result["directness_lcc_linkwise"] = calculate_directness_linkwise(
+                cl.giant(), numnodepairs
+            )
         else:
-            result["directness_lcc_linkwise"] = calculate_directness_linkwise(G, numnodepairs)
+            result["directness_lcc_linkwise"] = calculate_directness_linkwise(
+                G, numnodepairs
+            )
         logging.info("Directness LCC Linkwise: %s", result["directness_lcc_linkwise"])
 
     elif metric == "directness_all_linkwise":
-        if verbose: logging.info("Calculating directness linkwise (all components)...")
+        if verbose:
+            logging.info("Calculating directness linkwise (all components)...")
         if "directness_lcc_linkwise" in result and len(cl) <= 1:
             result["directness_all_linkwise"] = result["directness_lcc_linkwise"]
         else:
-            result["directness_all_linkwise"] = calculate_directness_linkwise(G, numnodepairs)
+            result["directness_all_linkwise"] = calculate_directness_linkwise(
+                G, numnodepairs
+            )
         logging.info("Directness All Linkwise: %s", result["directness_all_linkwise"])
     logging.info(result)
     return result, cov_prev
 
-def calculate_metrics_parallel(G, GT_abstract, G_big, nnids, 
-                               calcmetrics={"length": 0, "length_lcc": 0, "coverage": 0, "directness": 0}, 
-                               buffer_walk=500, numnodepairs=500, verbose=False, 
-                               return_cov=True, G_prev=None, cov_prev=None, 
-                               ignore_GT_abstract=False, Gexisting=None):
+
+def calculate_metrics_parallel(
+    G,
+    GT_abstract,
+    G_big,
+    nnids,
+    calcmetrics={"length": 0, "length_lcc": 0, "coverage": 0, "directness": 0},
+    buffer_walk=500,
+    numnodepairs=500,
+    verbose=False,
+    return_cov=True,
+    G_prev=None,
+    cov_prev=None,
+    ignore_GT_abstract=False,
+    Gexisting=None,
+):
     """Calculates all metrics in parallel."""
 
     output = {key: 0 for key in calcmetrics}
@@ -1316,10 +1725,22 @@ def calculate_metrics_parallel(G, GT_abstract, G_big, nnids,
     with ProcessPoolExecutor() as executor:
         futures = {
             metric: executor.submit(
-                calculate_metric, metric, G, GT_abstract, G_big, nnids, cl, 
-                G_prev, cov_prev, buffer_walk, numnodepairs, verbose, return_cov, 
-                Gexisting, ignore_GT_abstract
-            ) 
+                calculate_metric,
+                metric,
+                G,
+                GT_abstract,
+                G_big,
+                nnids,
+                cl,
+                G_prev,
+                cov_prev,
+                buffer_walk,
+                numnodepairs,
+                verbose,
+                return_cov,
+                Gexisting,
+                ignore_GT_abstract,
+            )
             for metric in calcmetrics
         }
 
@@ -1335,23 +1756,21 @@ def calculate_metrics_parallel(G, GT_abstract, G_big, nnids,
 
     return (output, dict(cov)) if return_cov else output
 
+
 def overlap_linepoly(l, p):
-    """Calculates the length of shapely LineString l falling inside the shapely Polygon p
-    """
+    """Calculates the length of shapely LineString l falling inside the shapely Polygon p"""
     return p.intersection(l).length if l.length else 0
 
 
 def edge_lengths(G):
-    """Returns the total length of edges in an igraph graph.
-    """
-    return sum([e['weight'] for e in G.es])
+    """Returns the total length of edges in an igraph graph."""
+    return sum([e["weight"] for e in G.es])
 
 
 def intersect_igraphs(G1, G2):
-    """Generates the graph intersection of igraph graphs G1 and G2, copying also link and node attributes.
-    """
+    """Generates the graph intersection of igraph graphs G1 and G2, copying also link and node attributes."""
     # Ginter = G1.__and__(G2) # This does not work with attributes.
-    if G1.ecount() > G2.ecount(): # Iterate through edges of the smaller graph
+    if G1.ecount() > G2.ecount():  # Iterate through edges of the smaller graph
         G1, G2 = G2, G1
     inter_nodes = set()
     inter_edges = []
@@ -1367,8 +1786,8 @@ def intersect_igraphs(G1, G2):
         n1_id = e.source_vertex["id"]
         n2_id = e.target_vertex["id"]
         try:
-            n1_index = G2.vs.find(id = n1_id).index
-            n2_index = G2.vs.find(id = n2_id).index
+            n1_index = G2.vs.find(id=n1_id).index
+            n2_index = G2.vs.find(id=n2_id).index
         except ValueError:
             continue
         if G2.are_connected(n1_index, n2_index):
@@ -1377,10 +1796,12 @@ def intersect_igraphs(G1, G2):
             inter_nodes.add(n2_index)
             edge_attributes = e.attributes()
             for edge_attribute_name in edge_attribute_name_list:
-                inter_edge_attributes[edge_attribute_name].append(edge_attributes[edge_attribute_name])
+                inter_edge_attributes[edge_attribute_name].append(
+                    edge_attributes[edge_attribute_name]
+                )
 
     # map nodeids to first len(inter_nodes) integers
-    idmap = {n_index:i for n_index,i in zip(inter_nodes, range(len(inter_nodes)))}
+    idmap = {n_index: i for n_index, i in zip(inter_nodes, range(len(inter_nodes)))}
 
     G_inter = ig.Graph()
     G_inter.add_vertices(len(inter_nodes))
@@ -1392,15 +1813,29 @@ def intersect_igraphs(G1, G2):
         v = G2.vs[n_index]
         node_attributes = v.attributes()
         for node_attribute_name in node_attribute_name_list:
-            inter_node_attributes[node_attribute_name].append(node_attributes[node_attribute_name])
+            inter_node_attributes[node_attribute_name].append(
+                node_attributes[node_attribute_name]
+            )
     for node_attribute_name in node_attribute_name_list:
         G_inter.vs[node_attribute_name] = inter_node_attributes[node_attribute_name]
 
     return G_inter
 
 
-def calculate_metrics_additively(Gs, GT_abstracts, prune_quantiles, G_big, nnids, buffer_walk = 500, numnodepairs = 500, verbose = False, return_cov = True, Gexisting = {}, selected_quantiles=None):
-    """Calculates all metrics, additively. 
+def calculate_metrics_additively(
+    Gs,
+    GT_abstracts,
+    prune_quantiles,
+    G_big,
+    nnids,
+    buffer_walk=500,
+    numnodepairs=500,
+    verbose=False,
+    return_cov=True,
+    Gexisting={},
+    selected_quantiles=None,
+):
+    """Calculates all metrics, additively.
     Coverage differences are calculated in every step instead of the whole coverage.
     If selected_quantiles is provided, only those quantiles will be calculated.
     """
@@ -1421,31 +1856,51 @@ def calculate_metrics_additively(Gs, GT_abstracts, prune_quantiles, G_big, nnids
         "efficiency_global_routed": [],
         "efficiency_local_routed": [],
         "directness_lcc_linkwise": [],
-        "directness_all_linkwise": []
+        "directness_all_linkwise": [],
     }
 
     # Filter Gs, GT_abstracts, and prune_quantiles based on selected_quantiles
     if selected_quantiles is not None:
-        selected_indices = [i for i, q in enumerate(prune_quantiles) if q in selected_quantiles]
+        selected_indices = [
+            i for i, q in enumerate(prune_quantiles) if q in selected_quantiles
+        ]
         Gs = [Gs[i] for i in selected_indices]
         GT_abstracts = [GT_abstracts[i] for i in selected_indices]
         prune_quantiles = [prune_quantiles[i] for i in selected_indices]
 
     # BICYCLE NETWORKS
-    covs = {} # covers using buffer_walk
+    covs = {}  # covers using buffer_walk
     cov_prev = Polygon()
     GT_prev = ig.Graph()
-    for GT, GT_abstract, prune_quantile in zip(Gs, GT_abstracts, tqdm(prune_quantiles, desc = "Bicycle networks", leave = False)):
-        if verbose: print("Calculating bike network metrics for quantile " + str(prune_quantile))
-        metrics, cov = calculate_metrics_parallel(GT, GT_abstract, G_big, nnids, output, buffer_walk, numnodepairs, verbose, return_cov, GT_prev, cov_prev, False, Gexisting)
-        
+    for GT, GT_abstract, prune_quantile in zip(
+        Gs, GT_abstracts, tqdm(prune_quantiles, desc="Bicycle networks", leave=False)
+    ):
+        if verbose:
+            print(
+                "Calculating bike network metrics for quantile " + str(prune_quantile)
+            )
+        metrics, cov = calculate_metrics_parallel(
+            GT,
+            GT_abstract,
+            G_big,
+            nnids,
+            output,
+            buffer_walk,
+            numnodepairs,
+            verbose,
+            return_cov,
+            GT_prev,
+            cov_prev,
+            False,
+            Gexisting,
+        )
+
         for key in output.keys():
             output[key].append(metrics[key])
-            
+
         covs[prune_quantile] = cov
         cov_prev = copy.deepcopy(cov)
         GT_prev = copy.deepcopy(GT)
-
 
     # # CAR CONSTRICTED BICYCLE NETWORKS (takes too long - commented out for now)
     # # These are the car networks where the length of the bike subnetwork is increased 10 times, effectively implementing a speed reduction from 50 km/h to 5 km/h. We are only interested in directness, as all other metrics do not change or are already calculated elsewhere.
@@ -1458,10 +1913,9 @@ def calculate_metrics_additively(Gs, GT_abstracts, prune_quantiles, G_big, nnids
     #     constrict_overlaps(GT_carconstrictedbike, GT)
     #     if verbose: print("Calculating carconstrictedbike network metrics for quantile " + str(prune_quantile))
     #     metrics = calculate_metrics(GT_carconstrictedbike, GT_abstract, G_big, nnids, output_carconstrictedbike, buffer_walk, numnodepairs, verbose, False)
-        
+
     #     for key in output_carconstrictedbike.keys():
     #         output_carconstrictedbike[key].append(metrics[key])
-
 
     # # CAR MINUS BICYCLE NETWORKS
     # # These are the car networks where the links from the bike subnetworks are completely removed. Here we follow a reverse order to build up the costly cover calculations additively.
@@ -1488,7 +1942,7 @@ def calculate_metrics_additively(Gs, GT_abstracts, prune_quantiles, G_big, nnids
     # for GT, prune_quantile in zip(GT_carminusbikes, tqdm(reversed(prune_quantiles), desc = "Car minus bicycle networks", leave = False)):
     #     if verbose: print("Calculating carminusbike network metrics for quantile " + str(prune_quantile))
     #     metrics, cov = calculate_metrics(GT, GT, G_big, nnids, output_carminusbike, buffer_walk, numnodepairs, verbose, return_cov, GT_prev, cov_prev, True)
-        
+
     #     for key in output_carminusbike.keys():
     #         output_carminusbike[key].insert(0, metrics[key]) # append to beginning due to reversed order
     #     covs_carminusbike[prune_quantile] = cov
@@ -1499,41 +1953,69 @@ def calculate_metrics_additively(Gs, GT_abstracts, prune_quantiles, G_big, nnids
     return (output, covs)
 
 
-def generate_video(placeid, imgname, vformat = "webm", duplicatelastframe = 5, verbose = True):
-    """Generate a video from a set of images using OpenCV
-    """
+def generate_video(
+    placeid, imgname, vformat="webm", duplicatelastframe=5, verbose=True
+):
+    """Generate a video from a set of images using OpenCV"""
     # Code adapted from: https://stackoverflow.com/questions/44947505/how-to-make-a-movie-out-of-images-in-python#44948030
-    
-    images = [img for img in os.listdir(PATH["plots_networks"] + placeid + "/") if img.startswith(placeid + imgname)]
+
+    images = [
+        img
+        for img in os.listdir(PATH["plots_networks"] + placeid + "/")
+        if img.startswith(placeid + imgname)
+    ]
     images.sort()
     frame = cv2.imread(os.path.join(PATH["plots_networks"] + placeid + "/", images[0]))
     height, width, layers = frame.shape
 
     if vformat == "webm":
         # https://stackoverflow.com/questions/49530857/python-opencv-video-format-play-in-browser
-        fourcc = cv2.VideoWriter_fourcc(*'vp80')
-        video = cv2.VideoWriter(PATH["videos"] + placeid + "/" + placeid + imgname + '.webm', fourcc, 10, (width, height))
+        fourcc = cv2.VideoWriter_fourcc(*"vp80")
+        video = cv2.VideoWriter(
+            PATH["videos"] + placeid + "/" + placeid + imgname + ".webm",
+            fourcc,
+            10,
+            (width, height),
+        )
     elif vformat == "mp4":
         # https://www.pyimagesearch.com/2016/02/22/writing-to-video-with-opencv/#comment-390650
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video = cv2.VideoWriter(PATH["videos"] + placeid + "/" + placeid + imgname + '.mp4', fourcc, 10, (width, height))
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        video = cv2.VideoWriter(
+            PATH["videos"] + placeid + "/" + placeid + imgname + ".mp4",
+            fourcc,
+            10,
+            (width, height),
+        )
 
     for image in images:
-        video.write(cv2.imread(os.path.join(PATH["plots_networks"] + placeid + "/", image)))
+        video.write(
+            cv2.imread(os.path.join(PATH["plots_networks"] + placeid + "/", image))
+        )
     # Add the last frame duplicatelastframe more times:
     for i in range(0, duplicatelastframe):
-        video.write(cv2.imread(os.path.join(PATH["plots_networks"] + placeid + "/", images[-1])))
+        video.write(
+            cv2.imread(os.path.join(PATH["plots_networks"] + placeid + "/", images[-1]))
+        )
 
     cv2.destroyAllWindows()
     video.release()
     if verbose:
-        print("Video " + placeid + imgname + '.' + vformat + ' generated from ' + str(len(images)) + " frames.")
+        print(
+            "Video "
+            + placeid
+            + imgname
+            + "."
+            + vformat
+            + " generated from "
+            + str(len(images))
+            + " frames."
+        )
 
 
-
-def write_result(path_output, task_id, res, mode, placeid, prune_measure, suffix, dictnested={}):
-    """Write results (pickle, dict to csv, or geojson)
-    """
+def write_result(
+    path_output, task_id, res, mode, placeid, prune_measure, suffix, dictnested={}
+):
+    """Write results (pickle, dict to csv, or geojson)"""
     if mode == "pickle":
         openmode = "wb"
     else:
@@ -1562,24 +2044,35 @@ def write_result(path_output, task_id, res, mode, placeid, prune_measure, suffix
 
         elif mode == "dictnested":
             # Writing a nested dictionary to CSV
-            fields = ['network'] + list(dictnested.keys())
+            fields = ["network"] + list(dictnested.keys())
             w = csv.DictWriter(f, fields)
             w.writeheader()
             for key, val in sorted(res.items()):
-                row = {'network': key}
+                row = {"network": key}
                 row.update(val)
                 w.writerow(row)
 
         elif mode == "geojson":
-                geojson_data = {}
-                for key, val in res.items():
-                    if isinstance(val, list) and all(isinstance(item, ig.Graph) for item in val):
-                        geojson_data[key] = [{"prune_index": idx, "quantile": q, "geometry": ig_to_geojson(item)} for idx, (q, item) in enumerate(zip(res["prune_quantiles"], val))]
-                    elif isinstance(val, ig.Graph):
-                        geojson_data[key] = {"geometry": ig_to_geojson(val)}
-                    else:
-                        geojson_data[key] = val
-                json.dump(geojson_data, f, indent=4)
+            geojson_data = {}
+            for key, val in res.items():
+                if isinstance(val, list) and all(
+                    isinstance(item, ig.Graph) for item in val
+                ):
+                    geojson_data[key] = [
+                        {
+                            "prune_index": idx,
+                            "quantile": q,
+                            "geometry": ig_to_geojson(item),
+                        }
+                        for idx, (q, item) in enumerate(
+                            zip(res["prune_quantiles"], val)
+                        )
+                    ]
+                elif isinstance(val, ig.Graph):
+                    geojson_data[key] = {"geometry": ig_to_geojson(val)}
+                else:
+                    geojson_data[key] = val
+            json.dump(geojson_data, f, indent=4)
 
 
 def gdf_to_geojson(gdf, properties):
@@ -1587,27 +2080,30 @@ def gdf_to_geojson(gdf, properties):
     The gdf must consist only of geometries of type Point.
     Adapted from: https://geoffboeing.com/2015/10/exporting-python-data-geojson/
     """
-    geojson = {'type':'FeatureCollection', 'features':[]}
+    geojson = {"type": "FeatureCollection", "features": []}
     for _, row in gdf.iterrows():
-        feature = {'type':'Feature',
-                   'properties':{},
-                   'geometry':{'type':'Point',
-                               'coordinates':[]}}
-        feature['geometry']['coordinates'] = [row.geometry.x, row.geometry.y]
+        feature = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {"type": "Point", "coordinates": []},
+        }
+        feature["geometry"]["coordinates"] = [row.geometry.x, row.geometry.y]
         for prop in properties:
-            feature['properties'][prop] = row[prop]
-        geojson['features'].append(feature)
+            feature["properties"][prop] = row[prop]
+        geojson["features"].append(feature)
     return geojson
 
 
-
 def ig_to_shapely(G):
-    """Turn an igraph graph G to a shapely LineString
-    """
-    edgetuples = [((e.source_vertex["x"], e.source_vertex["y"]), (e.target_vertex["x"], e.target_vertex["y"])) for e in G.es]
+    """Turn an igraph graph G to a shapely LineString"""
+    edgetuples = [
+        (
+            (e.source_vertex["x"], e.source_vertex["y"]),
+            (e.target_vertex["x"], e.target_vertex["y"]),
+        )
+        for e in G.es
+    ]
     G_shapely = LineString()
     for t in edgetuples:
         G_shapely = ops.unary_union([G_shapely, LineString(t)])
     return G_shapely
-
-

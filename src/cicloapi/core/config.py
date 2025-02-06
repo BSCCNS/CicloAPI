@@ -1,6 +1,5 @@
 # config.py
 
-import os
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -13,14 +12,12 @@ if ENV_PATH.exists():
 
 # Setting for the API
 
+
 class Settings:
     PROJECT_NAME: str = "CicloAPI"
-    DESCRIPTION: str = (
-        "API for the ciclovias project."
-    )
+    DESCRIPTION: str = "API for the ciclovias project."
     CONTACT: dict[str] = {"name": "M. Herrero", "e-mail": "mherrero@bsc.es"}
     PROJECT_VERSION: str = "1.0"
-
 
 
 settings = Settings()

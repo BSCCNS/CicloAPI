@@ -5,4 +5,4 @@ from cicloapi.core import endpoints
 
 # We define a router that collects everything together
 api_router = APIRouter()
-api_router.include_router(endpoints.router, prefix='/tasks')  # API endpoints
+api_router.include_router(endpoints.router, prefix="/tasks")  # API endpoints

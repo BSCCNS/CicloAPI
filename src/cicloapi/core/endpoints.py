@@ -19,64 +19,62 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
-from cicloapi.backend.models.scripts import path, prepare_networks, prepare_pois, cluster_pois, poi_based_generation, analyze_results, real_city_metrics
+from cicloapi.backend.models.scripts import (
+    path,
+    prepare_networks,
+    prepare_pois,
+    cluster_pois,
+    poi_based_generation,
+    analyze_results,
+    real_city_metrics,
+)
 from cicloapi.backend.models.parameters.parameters import snapthreshold
 
 current_working_directory = os.getcwd()
 
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger("uvicorn.error")
 tasks = {}
 
 router = APIRouter()
 
 
-
 ###########
-#ENDPOINTS
+# ENDPOINTS
 ###########
 
-# Endpoint to check tasks running
-@router.get("/list")
-async def check_tasks():
-    '''
-    Checks which tasks are being executed in the backend.
-    Parameters:
-        token (dict): Decoded authentication token.
-    Return:
-        list[dict]: Dictionary containing the tasks. Task IDs are used as keys and values indicate starting time.
-    '''
 
-    list_dict ={}
-
-    for key in tasks.keys():
-        task_ob = tasks[key]
-        list_dict[key] = task_ob.start_time
-
-    return list_dict
-
-# Endpoint to setup the city (download OSM data) 
-@router.post("/city_setup")
+# Endpoint to setup the city (downloads OSM data)
+@router.post(
+    "/city_setup",
+    summary="Setups the model for a given city, downloading all neccessary files.",
+)
 async def city_setup(input: schemas.InputCity):
-    '''
-    Starts execution of a model task.
+    """
+    Starts the execution of a task setting up the model for a given city, downloading all neccessary files.
     Parameters:
-        input (JSON): Input parameters for the model (see InputData schema).
-        token (dict): Decoded authenticaton token.
+        input (InputCity): Input parameters for the model.
     Return:
         (JSON): ID of the task.
-    '''
+    """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
-    logger.info(f'Starting run with task ID: {task_id}')
-    
+    logger.info(f"Starting run with task ID: {task_id}")
+
     PATH = path.PATH
-    for subfolder in ["data", "plots", "plots_networks", "results", "exports", "exports_json", "videos"]:
+    for subfolder in [
+        "data",
+        "plots",
+        "plots_networks",
+        "results",
+        "exports",
+        "exports_json",
+        "videos",
+    ]:
         for key in input.city.keys():
-            placepath = PATH[subfolder] / key  
-            placepath.mkdir(parents=True, exist_ok=True)  
+            placepath = PATH[subfolder] / key
+            placepath.mkdir(parents=True, exist_ok=True)
             print(f"Successfully created folder {placepath}")
-    
-    
+
     async def setup_task(task_id):
         try:
             # Extract parameters
@@ -89,9 +87,9 @@ async def city_setup(input: schemas.InputCity):
             logger.info("Running - Preparing POIs")
             prepare_pois.main(PATH, input.city)
 
-            logger.info(f'Run with task ID: {task_id} finished')
+            logger.info(f"Run with task ID: {task_id} finished")
         except asyncio.CancelledError:
-            logger.info(f'Run with task ID: {task_id} cancelled')
+            logger.info(f"Run with task ID: {task_id} cancelled")
             raise  # Propagate the cancellation exception
 
     time = str(datetime.datetime.now())
@@ -100,21 +98,24 @@ async def city_setup(input: schemas.InputCity):
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
-# Endpoint to run the task 
-@router.post("/run")
+
+#######################
+#######################
+
+
+# Endpoint to run the task
+@router.post("/run", summary="Starts the computation of the bike network.")
 async def run_model(input: schemas.InputData):
-    '''
+    """
     Starts execution of a model task.
     Parameters:
-        input (JSON): Input parameters for the model (see InputData schema).
-        token (dict): Decoded authenticaton token.
+        input (InputData): Input parameters for the model.
     Return:
         (JSON): ID of the task.
-    '''
-    
-   
+    """
+
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
-    logger.info(f'Starting run with task ID: {task_id}')
+    logger.info(f"Starting run with task ID: {task_id}")
 
     async def model_task(task_id):
         try:
@@ -124,18 +125,25 @@ async def run_model(input: schemas.InputData):
 
             logger.info("Running - Clustering POIs")
             cluster_pois.main(
-                PATH, task_id, input.city, input.h3_zoom, snapthreshold,
-                sliders["sanidad"], sliders["educacion"], sliders["administracion"], 
-                sliders["aprovisionamiento"], sliders["cultura"], sliders["deporte"], 
-                sliders["transporte"]
+                PATH,
+                task_id,
+                input.city,
+                input.h3_zoom,
+                snapthreshold,
+                sliders["sanidad"],
+                sliders["educacion"],
+                sliders["administracion"],
+                sliders["aprovisionamiento"],
+                sliders["cultura"],
+                sliders["deporte"],
+                sliders["transporte"],
             )
 
             poi_based_generation.main(PATH, task_id, input.city, input.prune_measure)
 
-
-            logger.info(f'Run with task ID: {task_id} finished')
+            logger.info(f"Run with task ID: {task_id} finished")
         except asyncio.CancelledError:
-            logger.info(f'Run with task ID: {task_id} cancelled')
+            logger.info(f"Run with task ID: {task_id} cancelled")
             raise  # Propagate the cancellation exception
 
     time = str(datetime.datetime.now())
@@ -145,21 +153,28 @@ async def run_model(input: schemas.InputData):
     return {"task_id": task_id}
 
 
-@router.post("/city_metrics")
+#####################
+#####################
+
+
+@router.post(
+    "/city_metrics",
+    summary="Computes the metrics for a specific stage of the network growth.",
+)
 async def run_analysis(input: schemas.InputResults):
-    '''
-    Get the metrics for the actual city
+    """
+    Starts a task computing the metrics for given run and city at a stage specified by the input.
+
     Parameters:
-        input (JSON): Input parameters for the analysis (see InputData schema).
-        token (dict): Decoded authentication token.
+        input (InputResults): Input parameters for the analysis.
     Return:
         (JSON): ID of the task.
-    '''
-    
-    task_id = str(uuid.uuid4())  # Generate a unique ID for the task
-    logger.info(f'Starting run with task ID: {task_id}')
+    """
 
-    logger.info(f'Starting analysis with task ID: {task_id}')
+    task_id = str(uuid.uuid4())  # Generate a unique ID for the task
+    logger.info(f"Starting run with task ID: {task_id}")
+
+    logger.info(f"Starting analysis with task ID: {task_id}")
 
     async def analysis_task(task_id):
         try:
@@ -170,9 +185,9 @@ async def run_analysis(input: schemas.InputResults):
             logger.info("Running - Analyzing Metrics")
             real_city_metrics.main(PATH, input.task_id, cities)
 
-            logger.info(f'Analysis with task ID: {task_id} finished')
+            logger.info(f"Analysis with task ID: {task_id} finished")
         except asyncio.CancelledError:
-            logger.info(f'Analysis with task ID: {task_id} cancelled')
+            logger.info(f"Analysis with task ID: {task_id} cancelled")
             raise  # Propagate the cancellation exception
 
     time = str(datetime.datetime.now())
@@ -181,22 +196,25 @@ async def run_analysis(input: schemas.InputResults):
     tasks[task_id] = task_ob
     return {"task_id": task_id}
 
-@router.post("/run_analysis")
+
+#######################
+#######################
+
+
+@router.post("/run_analysis", summary="?????")
 async def run_analysis(input: schemas.InputResults):
-    '''
-    Starts execution of an analysis task.
+    """
+    Starts execution of an analysis task. (Roger, check this, please)
     Parameters:
-        input (JSON): Input parameters for the analysis (see InputData schema).
-        token (dict): Decoded authentication token.
+        input (InputResults): Input parameters for the analysis.
     Return:
         (JSON): ID of the task.
-    '''
-  
+    """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
-    logger.info(f'Starting run with task ID: {task_id}')
+    logger.info(f"Starting run with task ID: {task_id}")
 
-    logger.info(f'Starting analysis with task ID: {task_id}')
+    logger.info(f"Starting analysis with task ID: {task_id}")
 
     async def analysis_task(task_id):
         try:
@@ -207,9 +225,9 @@ async def run_analysis(input: schemas.InputResults):
             logger.info("Running - Analyzing Metrics")
             analyze_results.main(PATH, input.task_id, cities, prune_index=input.phase)
 
-            logger.info(f'Analysis with task ID: {task_id} finished')
+            logger.info(f"Analysis with task ID: {task_id} finished")
         except asyncio.CancelledError:
-            logger.info(f'Analysis with task ID: {task_id} cancelled')
+            logger.info(f"Analysis with task ID: {task_id} cancelled")
             raise  # Propagate the cancellation exception
 
     time = str(datetime.datetime.now())
@@ -219,19 +237,77 @@ async def run_analysis(input: schemas.InputResults):
     return {"task_id": task_id}
 
 
+#######################
+#######################
 
-# Endpoint to stop the task
-@router.delete("/stop/{task_id}")
-async def stop_model(task_id: str):
-    '''
-    Stops a running task.
+# Endpoint to download the map
+
+
+@router.post("/map/{task_id}", summary="Download the geographic data of the network.")
+async def download_map(task_id: str, input: schemas.InputData):
+    """
+    Streams the download of the map stored in disk for the task with ID equal to task_id.
+
     Parameters:
         task_id (str): ID of the task to stop.
-        token (dict): Decoded authenticaton token.
+    Return:
+        (FileResponse): Map file in .geojson format.
+    """
+    PATH = path.PATH
+
+    task_ob = tasks.get(task_id)
+
+    if task_ob is None:
+        raise HTTPException(status_code=404, detail="No task with ID " + task_id)
+
+    suffix = ".geojson"
+    city_key = list(input.city.keys())[0]
+    filename = f"{city_key}_{input.prune_measure}{suffix}"
+
+    # Use pathlib to construct the file path
+    result_path = Path(PATH["task_output"]) / task_id / filename
+    return FileResponse(result_path)
+
+
+#######################
+#######################
+
+
+# Endpoint to check tasks running
+@router.get("/list", summary="Returns a list of running and completed tasks.")
+async def check_tasks():
+    """
+    Checks which tasks are being executed or finished in the backend.
+
+    Return:
+        list[dict]: Dictionary containing the tasks. Task IDs are used as keys and values indicate starting time.
+    """
+
+    list_dict = {}
+
+    for key in tasks.keys():
+        task_ob = tasks[key]
+        list_dict[key] = task_ob.start_time
+
+    return list_dict
+
+
+#####################
+#####################
+
+
+# Endpoint to stop the task
+@router.delete("/stop/{task_id}", summary="Stops a running task.")
+async def stop_model(task_id: str):
+    """
+    Stops a running task.
+
+    Parameters:
+        task_id (str): ID of the task to stop.
     Return:
         (JSON): Confirmation of cancellation.
-    '''
-    
+    """
+
     try:
         task_ob = tasks.get(task_id)
     except:
@@ -241,7 +317,7 @@ async def stop_model(task_id: str):
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     if task.done():
         raise HTTPException(status_code=400, detail="Task already completed")
 
@@ -250,36 +326,8 @@ async def stop_model(task_id: str):
     try:
         await task  # Wait for the task to handle the cancellation
     except asyncio.CancelledError:
-        logger.info(f'Task {task_id} successfully cancelled')
+        logger.info(f"Task {task_id} successfully cancelled")
     finally:
         tasks.pop(task_id, None)  # Clean up the task from the dictionary
 
     return {"status": "task cancelled", "task_id": task_id}
-
-
-# Endpoint to download the map
-
-@router.get("/map/{task_id}")
-async def download_map(task_id: str, input: schemas.InputData):
-    '''
-    Streams the download of the map stored in disk for the task with ID equal to task_id.
-    Parameters:
-        task_id (str): ID of the task to stop.
-        token (dict): Decoded authenticaton token.
-    Return:
-        (FileResponse): Map file in jpeg format.
-    '''
-    PATH = path.PATH
-
-    task_ob = tasks.get(task_id)
-    
-    if task_ob is None:
-        raise HTTPException(status_code=404, detail="No task with ID " + task_id)
-    
-    suffix = ".geojson"
-    city_key = list(input.city.keys())[0]
-    filename = f"{city_key}_{input.prune_measure}{suffix}"
-
-    # Use pathlib to construct the file path
-    result_path = Path(PATH["task_output"]) / task_id / filename
-    return FileResponse(result_path)

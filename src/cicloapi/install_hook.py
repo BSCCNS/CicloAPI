@@ -11,9 +11,11 @@ logging.basicConfig(
 BASE_DIR = Path.cwd()
 ENV_PATH = BASE_DIR / ".env"
 
+
 def generate_secret_key():
     """Generates a 32-character hexadecimal secret key."""
     return secrets.token_hex(32)
+
 
 def generate_env_variable():
     """Generates a random SECRET_KEY and saves it if not already set."""
@@ -26,11 +28,12 @@ def generate_env_variable():
                     return
 
     secret_key = generate_secret_key()
-    
-    with open(ENV_PATH, "a") as f:  
+
+    with open(ENV_PATH, "a") as f:
         f.write(f"SECRET_KEY={secret_key}\n")
-    
+
     logging.info(f"Generated SECRET_KEY and saved to {ENV_PATH}")
+
 
 if __name__ == "__main__":
     generate_env_variable()
