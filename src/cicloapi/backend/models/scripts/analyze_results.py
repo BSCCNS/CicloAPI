@@ -49,7 +49,7 @@ def main(
     PATH: str,
     task_id: str,
     cities: Dict[str, Dict[str, Union[str, None]]],
-    prune_index: int,
+    prune_index: list[int],
 ) -> None:
     """
     Main function to analyze existing infrastructure and calculate metrics for given cities.
@@ -139,7 +139,7 @@ def main(
 
         # Load POIs
         logger.info(f"{placeid}: Loading POIs for results analysis")
-        file_path = Path(PATH["data"]) / placeid / f"{placeid}_nnids_sliders.csv"
+        file_path = path_output / task_id / f"{placeid}_nnids_sliders.csv"
         with open(file_path) as f:
             nnids = [int(line.rstrip()) for line in f]
 
@@ -165,8 +165,9 @@ def main(
             debug,
             True,
             Gexisting,
-            selected_quantiles=res["prune_quantiles"][:prune_index],
+            selected_quantiles=[res["prune_quantiles"][i] for i in prune_index]
         )
+
         logger.info(f"{placeid}: Calculating metrics in parallel for MST")
         output_MST, cov_MST = calculate_metrics_parallel(
             res["MST"],
