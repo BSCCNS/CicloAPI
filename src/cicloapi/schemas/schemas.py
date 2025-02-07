@@ -30,7 +30,17 @@ class InputResults(InputCity):
     task_id: str
 
 
-class ModelTask(BaseModel):
+class ModelTask(InputCity):
     task: Optional[asyncio.Task] = Field(default=None, exclude=True)
     start_time: str
+    type: str
+    status: str = 'Running'
+    
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class PruneTask(ModelTask):
+    prune_measure: str|None = None
+    
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
