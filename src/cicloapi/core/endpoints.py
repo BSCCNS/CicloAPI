@@ -249,6 +249,7 @@ async def run_analysis(input: schemas.InputResults):
             logger.info("Running - Analyzing Metrics")
             await asyncio.to_thread(analyze_results.main, PATH, input.task_id, cities, prune_index=input.phase)
 
+
             logger.info(f"Analysis with task ID: {task_id} finished")
             tasks[task_id].status = 'Completed'
 
