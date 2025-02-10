@@ -32,6 +32,30 @@ from cicloapi.database.db_methods import create_connection, Database
 
 
 def main(PATH, cities):
+    """
+    Main function to prepare Points of Interest (POIs) for given cities.
+
+    Args:
+        PATH (dict): Dictionary containing paths to data directories.
+        cities (dict): Dictionary containing city information with place IDs as keys and place details as values.
+
+    The function performs the following steps:
+    1. Establishes a database connection.
+    2. Loads carall graphs for each city in OSMNX format.
+    3. Iterates through the cities to load location polygons and carall graphs.
+    4. Geocodes the location geometry or reads shapefiles if available.
+    5. Loads and assigns carall graphs for each city.
+    6. Processes each POI parameter and extracts relevant geometries.
+    7. Snaps points to the nearest nodes in the network.
+    8. Saves nearest node IDs for POIs in a CSV file.
+    9. Converts the GeoDataFrame to string type and saves locally.
+    10. Prepares POI data for database insertion.
+    11. Inserts POIs into the database.
+    12. Closes the database connection.
+
+    Raises:
+        Exception: If any error occurs during the processing of POIs.
+    """
     connection = create_connection()
     database = Database(connection)
     pois = []

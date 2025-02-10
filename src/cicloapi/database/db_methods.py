@@ -42,7 +42,7 @@ class Database:
 
     def insert_pois(self, pois):
         sql = """
-        INSERT INTO f_poi (city_id, name, category, attributes, geometry)
+        INSERT INTO f_poi (city_id, name, category, attributes, geometry, addr_postcode, addr_street, amenity, network, outdoor, shelter_type, addr_housenumber, indoor)
         VALUES %s
         """
         execute_values(self.cursor, sql, pois)
