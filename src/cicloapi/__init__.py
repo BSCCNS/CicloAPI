@@ -23,8 +23,8 @@ path = Path(__file__).parent / "images"
 app.mount("/images", StaticFiles(directory=path), name="images")
 
 # Custom OpenAPI schema to include logo.
-def custom_openapi(request: Request = None):
-    api_url = str(request.base_url) if request else "http://localhost:8000"
+def custom_openapi():
+
     if app.openapi_schema:
         return app.openapi_schema
     
@@ -37,12 +37,33 @@ def custom_openapi(request: Request = None):
     )
 
     openapi_schema["info"]["x-logo"] = {
-        "url": f"{api_url}/images/Logo_blue.png"
+        "url": "/images/Logo_blue.png"
     }
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 app.openapi = custom_openapi
+
+# And we replace the favicons
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="CicloAPI",
+        swagger_favicon_url="/images/favicon.png"
+    )
+
+@app.get("/redoc", include_in_schema=False)
+def overridden_redoc():
+	return get_redoc_html(
+        openapi_url="/openapi.json", 
+        title="CicloAPI", 
+        redoc_favicon_url="/images/favicon.png"
+    )
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse("/images/favicon.png")
 
 
 #####################################
