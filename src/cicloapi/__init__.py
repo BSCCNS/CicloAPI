@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.responses import FileResponse
 from cicloapi.core.config import settings
 from cicloapi.core.routers import api_router
@@ -17,10 +18,9 @@ app.include_router(api_router)
 
 ####################################
 ####################################
-# Endpoint for the logo
+# Endpoint for logos
 path = Path(__file__).parent / "images"
 app.mount("/images", StaticFiles(directory=path), name="images")
-
 
 # Custom OpenAPI schema to include logo.
 def custom_openapi(request: Request = None):
