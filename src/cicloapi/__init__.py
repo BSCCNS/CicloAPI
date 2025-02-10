@@ -44,16 +44,8 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-# And we replace the favicons
-@app.get("/docs", include_in_schema=False)
-async def swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url="/openapi.json",
-        title="CicloAPI",
-        swagger_favicon_url="/images/favicon.png"
-    )
 
-@app.get("/redoc", include_in_schema=False)
+@app.get("/docs", include_in_schema=False)
 def overridden_redoc():
 	return get_redoc_html(
         openapi_url="/openapi.json", 

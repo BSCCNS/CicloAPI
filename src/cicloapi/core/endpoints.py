@@ -51,10 +51,6 @@ router = APIRouter()
 async def city_setup(input: schemas.InputCity):
     """
     Starts the execution of a task setting up the model for a given city, downloading all neccessary files.
-    \n Parameters:
-        input (InputCity): Input parameters for the model.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -114,10 +110,6 @@ async def city_setup(input: schemas.InputCity):
 async def run_model(input: schemas.InputData):
     """
     Starts execution of a model task.
-    Parameters:
-        input (InputData): Input parameters for the model.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -177,11 +169,6 @@ async def run_model(input: schemas.InputData):
 async def run_analysis(input: schemas.InputResults):
     """
     Starts a task computing the metrics for given run and city at a stage specified by the input.
-
-    Parameters:
-        input (InputResults): Input parameters for the analysis.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -278,11 +265,6 @@ async def run_analysis(input: schemas.InputResults):
 async def download_map(task_id: str):
     """
     Streams the download of the map stored in disk for the task with ID equal to task_id.
-
-    Parameters:
-        task_id (str): ID of the task to stop.
-    Return:
-        (FileResponse): Map file in .geojson format.
     """
     PATH = path.PATH
 
@@ -308,9 +290,6 @@ async def download_map(task_id: str):
 async def check_tasks():
     """
     Checks which tasks are being executed or finished in the backend.
-
-    Return:
-        list[dict]: Dictionary containing the tasks. Task IDs are used as keys and values indicate starting time.
     """
 
     return tasks
@@ -324,12 +303,7 @@ async def check_tasks():
 @router.delete("/stop/{task_id}", summary="Stops a running task.")
 async def stop_model(task_id: str):
     """
-    Stops a running task.
-
-    Parameters:
-        task_id (str): ID of the task to stop.
-    Return:
-        (JSON): Confirmation of cancellation.
+    Stops a running task, provided its ID.
     """
 
     try:
