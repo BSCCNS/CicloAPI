@@ -4,8 +4,6 @@ __pycache__
 src/cicloapi/backend/data/
 src/cicloapi/backend/models/bikenwgrowth_external/
 cache/
-src/cicloapi/data/endpoints
-backend/
 .DS_Store
 .vscode
 output.geojson

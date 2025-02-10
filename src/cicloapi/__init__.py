@@ -1,9 +1,8 @@
 # main.py
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
-from fastapi.responses import FileResponse
+from fastapi.openapi.docs import get_redoc_html
 from cicloapi.core.config import settings
 from cicloapi.core.routers import api_router
 import uvicorn

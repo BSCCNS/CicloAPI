@@ -14,4 +14,4 @@ RUN uv pip install *.whl --system
 EXPOSE 8000
 
 # Command to run the application
-CMD cicloapi
+#CMD cicloapi
