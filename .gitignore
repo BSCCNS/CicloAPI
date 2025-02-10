@@ -8,3 +8,4 @@ src/cicloapi/data/endpoints
 backend/
 .DS_Store
 .vscode
+output.geojson

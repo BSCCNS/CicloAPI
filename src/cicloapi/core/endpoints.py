@@ -211,7 +211,7 @@ async def run_analysis(input: schemas.InputResults):
 #######################
 
 
-@router.post("/run_analysis", summary="?????")
+@router.post("/metrics", summary="Compute the metrics for different prune stages.")
 async def run_analysis(input: schemas.InputResults):
     """
     Starts execution of an analysis task. (Roger, check this, please)
@@ -297,6 +297,24 @@ async def check_tasks():
 
 #####################
 #####################
+
+# Endpoint to check the status of a specific task
+@router.get("/status/{task_id}", summary="Check the status of a given task.")
+async def status(task_id: str):
+    """
+    Checks the current status of a task by ID.
+    """
+    try:
+        task_ob = tasks.get(task_id)
+    except:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_ob.task
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return {'status': task_ob.status}
 
 
 # Endpoint to stop the task
