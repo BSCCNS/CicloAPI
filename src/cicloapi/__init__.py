@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Mounts the API and include all routers onto it
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 app.include_router(api_router)
 
 ####################################
@@ -33,7 +33,7 @@ def custom_openapi():
         version=settings.PROJECT_VERSION,
         summary="API for the ciclovias project.",
         description=settings.DESCRIPTION,
-        routes=app.routes,
+        routes=app.routes
     )
 
     openapi_schema["info"]["x-logo"] = {
