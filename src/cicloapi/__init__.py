@@ -31,7 +31,7 @@ def custom_openapi():
     openapi_schema = get_openapi(
         title=settings.PROJECT_NAME,
         version=settings.PROJECT_VERSION,
-        summary="API for the ciclovias project.",
+        summary=settings.SUMMARY,
         description=settings.DESCRIPTION,
         routes=app.routes
     )

@@ -46,7 +46,7 @@ router = APIRouter()
 # Endpoint to setup the city (downloads OSM data)
 @router.post(
     "/city_setup",
-    summary="Setups the model for a given city, downloading all neccessary files.",
+    summary="Setup the app for a given city.",
 )
 async def city_setup(input: schemas.InputCity):
     """
@@ -106,7 +106,7 @@ async def city_setup(input: schemas.InputCity):
 
 
 # Endpoint to run the task
-@router.post("/run", summary="Starts the computation of the bike network.")
+@router.post("/run", summary="Compute an extension of the bicycle network.")
 async def run_model(input: schemas.InputData):
     """
     Starts execution of a model task.
@@ -164,7 +164,7 @@ async def run_model(input: schemas.InputData):
 
 @router.post(
     "/city_metrics",
-    summary="Computes the metrics for a specific stage of the network growth.",
+    summary="Compute the metrics for the current city network.",
 )
 async def run_analysis(input: schemas.InputResults):
     """
@@ -286,7 +286,7 @@ async def download_map(task_id: str):
 
 
 # Endpoint to check tasks running
-@router.get("/list", summary="Returns a list of running and completed tasks.")
+@router.get("/list", summary="Query running and completed tasks.")
 async def check_tasks():
     """
     Checks which tasks are being executed or finished in the backend.
@@ -300,7 +300,7 @@ async def check_tasks():
 
 
 # Endpoint to stop the task
-@router.delete("/stop/{task_id}", summary="Stops a running task.")
+@router.delete("/stop/{task_id}", summary="Stop a running task.")
 async def stop_model(task_id: str):
     """
     Stops a running task, provided its ID.
