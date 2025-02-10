@@ -154,25 +154,19 @@ def main(PATH, task_id, cities):
                 if debug:
                     gdf.plot(color="red")
 
+                # Transform geometry to WKT
+                gdf["geometry"] = gdf["geometry"].apply(lambda geom: geom.wkt)
+
                 # Prepare POI data for database insertion
-                created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 for _, row in gdf.iterrows():
+                    print(poitag)
+                    print(poiid)
                     pois.append((
                         task_id,
                         placeid,
                         row.get("name", None),
-                        poitag,
-                        row.to_json(),
-                        row["geometry"].wkt,
-                        row.get("addr:postcode", None),
-                        row.get("addr:street", None),
-                        row.get("amenity", None),
-                        row.get("network", None),
-                        row.get("outdoor", None),
-                        row.get("shelter_type", None),
-                        row.get("addr:housenumber", None),
-                        row.get("indoor", None),
-                        created_at
+                        str(poiid),
+                        row.get("geometry", None)
                     ))
 
             except Exception as e:

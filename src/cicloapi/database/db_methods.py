@@ -46,19 +46,9 @@ class Database:
             task_id UUID,
             city_id TEXT,
             name TEXT,
-            category TEXT,
-            attributes JSONB,
-            geometry GEOMETRY,
-            addr_postcode TEXT,
-            addr_street TEXT,
-            amenity TEXT,
-            network TEXT,
-            outdoor TEXT,
-            shelter_type TEXT,
-            addr_housenumber TEXT,
-            indoor TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            PRIMARY KEY (task_id, city_id, name)
+            poiid TEXT,
+            geometry GEOMETRY(Point, 4326)
+
         );
         """
         self.cursor.execute(sql)
@@ -68,7 +58,7 @@ class Database:
 
     def insert_pois(self, pois):
         sql = """
-        INSERT INTO f_poi (task_id, city_id, name, category, attributes, geometry, addr_postcode, addr_street, amenity, network, outdoor, shelter_type, addr_housenumber, indoor, created_at)
+        INSERT INTO f_poi (task_id, city_id, name, poiid, geometry)
         VALUES %s
         """
         execute_values(self.cursor, sql, pois)
