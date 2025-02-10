@@ -43,19 +43,14 @@ router = APIRouter()
 # ENDPOINTS
 ###########
 
-
 # Endpoint to setup the city (downloads OSM data)
 @router.post(
     "/city_setup",
-    summary="Setups the model for a given city, downloading all neccessary files.",
+    summary="Setup the app for a given city.",
 )
 async def city_setup(input: schemas.InputCity):
     """
     Starts the execution of a task setting up the model for a given city, downloading all neccessary files.
-    Parameters:
-        input (InputCity): Input parameters for the model.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -111,14 +106,10 @@ async def city_setup(input: schemas.InputCity):
 
 
 # Endpoint to run the task
-@router.post("/run", summary="Starts the computation of the bike network.")
+@router.post("/run", summary="Compute an extension of the bicycle network.")
 async def run_model(input: schemas.InputData):
     """
     Starts execution of a model task.
-    Parameters:
-        input (InputData): Input parameters for the model.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -172,17 +163,12 @@ async def run_model(input: schemas.InputData):
 
 
 @router.post(
-    "/city_metrics",
-    summary="Computes the metrics for a specific stage of the network growth.",
+    "/base_metrics",
+    summary="Compute the metrics for the current city network.",
 )
 async def run_analysis(input: schemas.InputResults):
     """
     Starts a task computing the metrics for given run and city at a stage specified by the input.
-
-    Parameters:
-        input (InputResults): Input parameters for the analysis.
-    Return:
-        (JSON): ID of the task.
     """
 
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
@@ -279,11 +265,6 @@ async def run_analysis(input: schemas.InputResults):
 async def download_map(task_id: str):
     """
     Streams the download of the map stored in disk for the task with ID equal to task_id.
-
-    Parameters:
-        task_id (str): ID of the task to stop.
-    Return:
-        (FileResponse): Map file in .geojson format.
     """
     PATH = path.PATH
 
@@ -305,13 +286,10 @@ async def download_map(task_id: str):
 
 
 # Endpoint to check tasks running
-@router.get("/list", summary="Returns a list of running and completed tasks.")
+@router.get("/list", summary="Query running and completed tasks.")
 async def check_tasks():
     """
     Checks which tasks are being executed or finished in the backend.
-
-    Return:
-        list[dict]: Dictionary containing the tasks. Task IDs are used as keys and values indicate starting time.
     """
 
     return tasks
@@ -322,15 +300,10 @@ async def check_tasks():
 
 
 # Endpoint to stop the task
-@router.delete("/stop/{task_id}", summary="Stops a running task.")
+@router.delete("/stop/{task_id}", summary="Stop a running task.")
 async def stop_model(task_id: str):
     """
-    Stops a running task.
-
-    Parameters:
-        task_id (str): ID of the task to stop.
-    Return:
-        (JSON): Confirmation of cancellation.
+    Stops a running task, provided its ID.
     """
 
     try:

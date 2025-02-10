@@ -15,9 +15,18 @@ if ENV_PATH.exists():
 
 class Settings:
     PROJECT_NAME: str = "CicloAPI"
-    DESCRIPTION: str = "API for the ciclovias project."
+    SUMMARY: str = "API for bicycle networks."
+    DESCRIPTION: str = "Generate an extension of an existing bicycle network and evaluate its performance."
     CONTACT: dict[str] = {"name": "M. Herrero", "e-mail": "mherrero@bsc.es"}
     PROJECT_VERSION: str = "1.0"
+
+class DB_settings:
+    host="localhost"          # PostgreSQL server hostname
+    port= 5433               # Port number (use 5432 or the one you exposed)
+    database="CICLOAPI"       # Database name
+    user="postgres"              # Username
+    password="rogerbsc"        # Password
+
 
 
 settings = Settings()
