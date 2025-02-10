@@ -163,7 +163,7 @@ async def run_model(input: schemas.InputData):
 
 
 @router.post(
-    "/city_metrics",
+    "/base_metrics",
     summary="Compute the metrics for the current city network.",
 )
 async def run_analysis(input: schemas.InputResults):
