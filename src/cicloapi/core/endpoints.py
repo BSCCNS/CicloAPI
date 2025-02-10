@@ -43,7 +43,6 @@ router = APIRouter()
 # ENDPOINTS
 ###########
 
-
 # Endpoint to setup the city (downloads OSM data)
 @router.post(
     "/city_setup",
@@ -52,7 +51,7 @@ router = APIRouter()
 async def city_setup(input: schemas.InputCity):
     """
     Starts the execution of a task setting up the model for a given city, downloading all neccessary files.
-    Parameters:
+    \n Parameters:
         input (InputCity): Input parameters for the model.
     Return:
         (JSON): ID of the task.

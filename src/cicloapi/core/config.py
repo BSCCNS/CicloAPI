@@ -15,7 +15,7 @@ if ENV_PATH.exists():
 
 class Settings:
     PROJECT_NAME: str = "CicloAPI"
-    DESCRIPTION: str = "API for the ciclovias project."
+    DESCRIPTION: str = "Generate an extension of an existing bycicle network with vCity."
     CONTACT: dict[str] = {"name": "M. Herrero", "e-mail": "mherrero@bsc.es"}
     PROJECT_VERSION: str = "1.0"
 
