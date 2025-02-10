@@ -1,12 +1,20 @@
 import psycopg2
 from psycopg2 import OperationalError
+from psycopg2.extras import execute_values
 from cicloapi.core.config import DB_settings
 from shapely.geometry import shape
+import logging
 
-from cicloapi.core.endpoints import logger #Probably we should configure the logger in the main file
+#from cicloapi.core.endpoints import logger #Probably we should configure the logger in the main file
+
+logger = logging.getLogger("uvicorn.error")
+
+class DatabaseConnectionError(Exception):
+    pass
 
 def create_connection():
     try:
+        port = int(DB_settings.port)
         # Replace with your actual values
         connection = psycopg2.connect(
             host=DB_settings.host,          # PostgreSQL server hostname
@@ -16,33 +24,66 @@ def create_connection():
             password=DB_settings.password        # Password
         )
 
-        print("Connection to PostgreSQL database was successful")
+        logger.info("Connection to PostgreSQL database was successful")
         return connection
     except OperationalError as e:
-        print(f"The error '{e}' occurred")
+        logger.error(f"The error '{e}' occurred")
         return None
 
 
-class Database():
+class Database:
     def __init__(self, connection):
-        super(Database, self).__init__()
-
         if not connection:
-            raise Exception('Error connecting database.')
+            raise DatabaseConnectionError('Error connecting to the database.')
         
         self.connection = connection
         self.cursor = connection.cursor()
 
-    def writegeojson(self, gjson, table):
-        for feature in gjson["features"]:
-            name = feature["properties"].get("name", "Unknown")
-            geom = shape(feature["geometry"])  # Convert to Shapely geometry
-            wkt_geom = geom.wkt  # Convert to WKT format
 
-            sql = f"INSERT INTO {table} (name, geom) VALUES (%s, ST_GeomFromText(%s, 4326));"
-            self.cursor.execute(sql, (name, wkt_geom))
+    def insert_pois(self, pois):
+        sql = """
+        INSERT INTO f_poi (city_id, name, category, attributes, geometry)
+        VALUES %s
+        """
+        execute_values(self.cursor, sql, pois)
+        self.connection.commit()
+        logger.info('POIs inserted into database.')
 
-        logger.info('GeoJSON object written to database.')
+    def insert_network_edges(self, edges):
+        sql = """
+        INSERT INTO f_network_edges (city_id, network_type_id, u, v, key, osmid, highway, junction, maxspeed, ref, oneway, reversed, length, name, lanes, width, bridge, access, service)
+        VALUES %s
+        """
+        execute_values(self.cursor, sql, edges)
+        self.connection.commit()
+        logger.info('Network edges inserted into database.')
+
+    def insert_network_nodes(self, nodes):
+        sql = """
+        INSERT INTO f_network_nodes (osmid, city_id, network_type_id, y, x, street_count, highway, ref)
+        VALUES %s
+        """
+        execute_values(self.cursor, sql, nodes)
+        self.connection.commit()
+        logger.info('Network nodes inserted into database.')
+
+    def insert_network_types(self, network_types):
+        sql = """
+        INSERT INTO m_network_types (name)
+        VALUES %s
+        """
+        execute_values(self.cursor, sql, network_types)
+        self.connection.commit()
+        logger.info('Network types inserted into database.')
+
+    def insert_cities(self, cities):
+        sql = """
+        INSERT INTO m_cities (name, nominatimstring)
+        VALUES %s
+        """
+        execute_values(self.cursor, sql, cities)
+        self.connection.commit()
+        logger.info('Cities inserted into database.')
 
 
 

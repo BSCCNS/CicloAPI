@@ -20,10 +20,10 @@ class Settings:
     PROJECT_VERSION: str = "1.0"
 
 class DB_settings:
-    host="localhost",          # PostgreSQL server hostname
-    port="5433",               # Port number (use 5432 or the one you exposed)
-    database="CICLOAPI",       # Database name
-    user="roger",              # Username
+    host="localhost"          # PostgreSQL server hostname
+    port= 5433               # Port number (use 5432 or the one you exposed)
+    database="CICLOAPI"       # Database name
+    user="postgres"              # Username
     password="rogerbsc"        # Password
 
 
