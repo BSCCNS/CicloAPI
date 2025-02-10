@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Mounts the API and include all routers onto it
 
-app = FastAPI(docs_url=None, redoc_url=None)
+app = FastAPI(redoc_url=None)
 app.include_router(api_router)
 
 ####################################
@@ -45,7 +45,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-@app.get("/docs", include_in_schema=False)
+@app.get("/redoc", include_in_schema=False)
 def overridden_redoc():
 	return get_redoc_html(
         openapi_url="/openapi.json", 
