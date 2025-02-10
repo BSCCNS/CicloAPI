@@ -31,7 +31,7 @@ from cicloapi.backend.models.parameters.parameters import poiparameters, snapthr
 from cicloapi.database.db_methods import create_connection, Database
 
 
-def main(PATH, cities):
+def main(PATH, task_id, cities):
     """
     Main function to prepare Points of Interest (POIs) for given cities.
 
@@ -155,14 +155,28 @@ def main(PATH, cities):
                     gdf.plot(color="red")
 
                 # Prepare POI data for database insertion
+                created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 for _, row in gdf.iterrows():
                     pois.append((
-                        placeid,  # city_id
+                        task_id,
+                        placeid,
                         row.get("name", None),
                         poitag,
                         row.to_json(),
-                        row["geometry"].wkt
+                        row["geometry"].wkt,
+                        row.get("addr:postcode", None),
+                        row.get("addr:street", None),
+                        row.get("amenity", None),
+                        row.get("network", None),
+                        row.get("outdoor", None),
+                        row.get("shelter_type", None),
+                        row.get("addr:housenumber", None),
+                        row.get("indoor", None),
+                        created_at
                     ))
+
+            except Exception as e:
+                print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
             except Exception as e:
                 print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")

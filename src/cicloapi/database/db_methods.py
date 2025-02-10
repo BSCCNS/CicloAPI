@@ -40,14 +40,42 @@ class Database:
         self.cursor = connection.cursor()
 
 
+    def create_task_poi_table(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS f_poi (
+            task_id UUID,
+            city_id TEXT,
+            name TEXT,
+            category TEXT,
+            attributes JSONB,
+            geometry GEOMETRY,
+            addr_postcode TEXT,
+            addr_street TEXT,
+            amenity TEXT,
+            network TEXT,
+            outdoor TEXT,
+            shelter_type TEXT,
+            addr_housenumber TEXT,
+            indoor TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            PRIMARY KEY (task_id, city_id, name)
+        );
+        """
+        self.cursor.execute(sql)
+        self.connection.commit()
+        logger.info('Table task_poi created or already exists.')
+
+
     def insert_pois(self, pois):
         sql = """
-        INSERT INTO f_poi (city_id, name, category, attributes, geometry, addr_postcode, addr_street, amenity, network, outdoor, shelter_type, addr_housenumber, indoor)
+        INSERT INTO f_poi (task_id, city_id, name, category, attributes, geometry, addr_postcode, addr_street, amenity, network, outdoor, shelter_type, addr_housenumber, indoor, created_at)
         VALUES %s
         """
         execute_values(self.cursor, sql, pois)
         self.connection.commit()
-        logger.info('POIs inserted into database.')
+        inserted_rows = self.cursor.rowcount
+        logger.info(f'POIs inserted into database: {inserted_rows} rows.')
+        return inserted_rows
 
     def insert_network_edges(self, edges):
         sql = """

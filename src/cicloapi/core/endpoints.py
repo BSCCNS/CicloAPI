@@ -29,6 +29,7 @@ from cicloapi.backend.models.scripts import (
     real_city_metrics,
 )
 from cicloapi.backend.models.parameters.parameters import snapthreshold
+from cicloapi.database.db_methods import create_connection, Database
 
 current_working_directory = os.getcwd()
 
@@ -69,18 +70,25 @@ async def city_setup(input: schemas.InputCity):
         for key in input.city.keys():
             placepath = PATH[subfolder] / key
             placepath.mkdir(parents=True, exist_ok=True)
-            print(f"Successfully created folder {placepath}")
+            #print(f"Successfully created folder {placepath}")
 
     async def setup_task(task_id):
         try:
             # Extract parameters
             PATH = path.PATH
+
+            connection = create_connection()
+            database = Database(connection)
             # Execute workflow
+            
+            # Create table if not exists
+            database.create_task_poi_table()
+
             logger.info("Running - Preparing networks")
             await asyncio.to_thread(prepare_networks.main, PATH, input.city)  # Runs first
 
             logger.info("Running - Preparing POIs")
-            await asyncio.to_thread(prepare_pois.main, PATH, input.city)
+            await asyncio.to_thread(prepare_pois.main, PATH, task_id, input.city)
 
             logger.info(f"Run with task ID: {task_id} finished")
         except asyncio.CancelledError:
