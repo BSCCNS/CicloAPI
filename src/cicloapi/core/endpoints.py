@@ -85,7 +85,7 @@ async def city_setup(input: schemas.InputCity):
             await asyncio.to_thread(prepare_networks.main, PATH, input.city)  # Runs first
 
             logger.info("Running - Preparing POIs")
-            await asyncio.to_thread(prepare_pois.main, PATH, task_id, input.city, database)
+            await asyncio.to_thread(prepare_pois.main, PATH, task_id, input.city)
 
             logger.info(f"Run with task ID: {task_id} finished")
         except asyncio.CancelledError:

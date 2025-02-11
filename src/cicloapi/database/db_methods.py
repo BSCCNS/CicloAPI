@@ -1,6 +1,5 @@
 from cicloapi.database.database_models import Base, engine, F_POI
 from sqlalchemy.orm import Session
-from shapely.geometry import shape
 import logging
 
 #from cicloapi.core.endpoints import logger #Probably we should configure the logger in the main file
@@ -18,25 +17,24 @@ class Database:
         self.session = session
 
 
-    def insert_pois(session: Session, poi_data: list):
+    def insert_pois(session: Session, poi_data: dict):
         """
-        poi_data: list of dicts with keys:
+        poi_data: dict where each value is a dict with keys:
         - task_id
         - city_id
         - name
-        - poiid
+        - poi_category
         - geometry: GeoJSON dict, which will be converted to WKT
         """
         poi_objects = []
-        for poi in poi_data:
-            geom_obj = shape(poi["geometry"])  # Convert GeoJSON dict to Shapely object
-            wkt_geometry = geom_obj.wkt
+        print(poi_data)
+        for poi in poi_data.values():
             poi_obj = F_POI(
                 task_id=poi["task_id"],
                 city_id=poi["city_id"],
                 name=poi["name"],
-                poiid=poi["poiid"],
-                geometry=wkt_geometry
+                poi_category=poi["poi_category"],
+                geometry=poi["geometry"]
             )
             poi_objects.append(poi_obj)
         session.bulk_save_objects(poi_objects)

@@ -59,7 +59,7 @@ def main(PATH, task_id, cities):
     """
     session = SessionLocal()
     database = Database(session)
-    pois = []
+    pois = {}
 
     # Load all carall graphs in OSMNX format
     G_caralls = {}
@@ -159,17 +159,15 @@ def main(PATH, task_id, cities):
                 gdf["geometry"] = gdf["geometry"].apply(lambda geom: geom.wkt)
 
                 # Prepare POI data for database insertion
-                for _, row in gdf.iterrows():
-                    print(poitag)
-                    print(poiid)
-                    pois.append((
-                        task_id,
-                        placeid,
-                        row.get("name", None),
-                        str(poiid),
-                        row.get("geometry", None)
-                    ))
-
+                for idx, (_, row) in enumerate(gdf.iterrows()):
+                    key = f"{task_id}_{placeid}_{poiid}_{idx}"
+                    pois[key] = {
+                        "task_id": task_id,
+                        "city_id": placeid,
+                        "name": row.get("name", None),
+                        "poi_category": str(poiid),
+                        "geometry": row.get("geometry", None)
+                    }
             except Exception as e:
                 print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
@@ -177,7 +175,8 @@ def main(PATH, task_id, cities):
                 print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
     # Insert POIs into the database
-    database.insert_pois(pois)
+    print(pois)
+    Database.insert_pois(session,pois)
 
     session.close()
 
