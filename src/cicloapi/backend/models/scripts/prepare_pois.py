@@ -28,7 +28,8 @@ from cicloapi.backend.models.scripts.functions import (
 )
 from cicloapi.backend.models.parameters.parameters import poiparameters, snapthreshold
 
-from cicloapi.database.db_methods import create_connection, Database
+from cicloapi.database.database_models import SessionLocal
+from cicloapi.database.db_methods import Database
 
 
 def main(PATH, task_id, cities):
@@ -56,8 +57,8 @@ def main(PATH, task_id, cities):
     Raises:
         Exception: If any error occurs during the processing of POIs.
     """
-    connection = create_connection()
-    database = Database(connection)
+    session = SessionLocal()
+    database = Database(session)
     pois = []
 
     # Load all carall graphs in OSMNX format
@@ -178,7 +179,7 @@ def main(PATH, task_id, cities):
     # Insert POIs into the database
     database.insert_pois(pois)
 
-    connection.close()
+    session.close()
 
 if __name__ == "__main__":
     main()
