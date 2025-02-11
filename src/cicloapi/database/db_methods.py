@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks
 from sqlalchemy.orm import Session
 import logging
 
@@ -42,6 +42,40 @@ class Database:
         logger.info(f'Inserted {len(poi_objects)} POIs.')
         return len(poi_objects)
 
+    def insert_simulation_task(self, simulation_data: dict):
+        """
+        simulation_data: dict with keys:
+        - task_id
+        - prune_measure
+        - prune_quantiles
+        - h3_zoom
+        - sanidad
+        - educacion
+        - administracion
+        - aprovisionamiento
+        - cultura
+        - deporte
+        - transporte
+        - buffer_walk_distance
+        """
+        new_task = F_SimulationTasks(
+            task_id=simulation_data["task_id"],
+            prune_measure=simulation_data["prune_measure"],
+            prune_quantiles=simulation_data["prune_quantiles"],
+            h3_zoom=simulation_data["h3_zoom"],
+            sanidad=simulation_data["sanidad"],
+            educacion=simulation_data["educacion"],
+            administracion=simulation_data["administracion"],
+            aprovisionamiento=simulation_data["aprovisionamiento"],
+            cultura=simulation_data["cultura"],
+            deporte=simulation_data["deporte"],
+            transporte=simulation_data["transporte"],
+            buffer_walk_distance=simulation_data["buffer_walk_distance"]
+        )
+        self.session.add(new_task)
+        self.session.commit()
+        logger.info(f'Inserted simulation task with id {simulation_data["task_id"]}.')
+        return new_task
 
 Base.metadata.create_all(bind=engine)
 
