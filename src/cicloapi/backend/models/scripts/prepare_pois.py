@@ -175,7 +175,6 @@ def main(PATH, task_id, cities):
                 print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
     # Insert POIs into the database
-    print(pois)
     Database.insert_pois(session,pois)
 
     session.close()

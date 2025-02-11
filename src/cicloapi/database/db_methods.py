@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment
 from sqlalchemy.orm import Session
 import logging
 
@@ -76,6 +76,31 @@ class Database:
         self.session.commit()
         logger.info(f'Inserted simulation task with id {simulation_data["task_id"]}.')
         return new_task
+    
+    def insert_simulation_segments(self, segments_data: list):
+        """
+        segments_data: list of dicts with keys:
+        - task_id
+        - city_id
+        - prune_index
+        - quantile
+        - geometry (WKT string representing a LineString)
+        Inserts simulation segments into the database.
+        """
+        segment_objects = []
+        for seg in segments_data:
+            seg_obj = F_SimulationSegment(
+                task_id=seg["task_id"],
+                city_id=seg["city_id"],
+                prune_index=seg["prune_index"],
+                quantile=seg["quantile"],
+                geometry=seg["geometry"]
+            )
+            segment_objects.append(seg_obj)
+        self.session.bulk_save_objects(segment_objects)
+        self.session.commit()
+        logger.info(f"Inserted {len(segment_objects)} simulation segments.")
+        return segment_objects
 
 Base.metadata.create_all(bind=engine)
 

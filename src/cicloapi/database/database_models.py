@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import Column, Integer, Text, Float
+from sqlalchemy import Column, Integer, Text, Float, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geometry
 
@@ -38,3 +38,15 @@ class F_SimulationTasks(Base):
     deporte = Column(Float, nullable=False, default=5.0)
     transporte = Column(Float, nullable=False, default=2.0)
     buffer_walk_distance = Column(Integer, nullable=False, default=500)
+
+
+class F_SimulationSegment(Base):
+    __tablename__ = "f_simulation_edges"
+
+    segment_id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(UUID(as_uuid=False), nullable=False)
+    city_id = Column(Text, nullable=False)
+    prune_index = Column(Integer, nullable=False)
+    quantile = Column(Float, nullable=False)
+    # Allow any geometry type instead of only LINESTRING:
+    geometry = Column(Geometry(geometry_type="GEOMETRY", srid=4326), nullable=True)
