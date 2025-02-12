@@ -158,7 +158,7 @@ async def run_model(input: schemas.InputData):
                 sliders["transporte"],
             )
 
-            await asyncio.to_thread(poi_based_generation.main, PATH, task_id, input.city, input.prune_measure)
+            await asyncio.to_thread(poi_based_generation.main, PATH, task_id, input.city, input.prune_measure, input.connectivity)
 
             logger.info(f"Run with task ID: {task_id} finished")
             tasks[task_id].status = 'Completed'

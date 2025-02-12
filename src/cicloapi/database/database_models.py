@@ -46,6 +46,7 @@ class F_SimulationSegment(Base):
     segment_id = Column(Integer, primary_key=True, autoincrement=True)
     task_id = Column(UUID(as_uuid=False), nullable=False)
     city_id = Column(Text, nullable=False)
+    connectivity = Column(Text, nullable=False)
     prune_index = Column(Integer, nullable=False)
     quantile = Column(Float, nullable=False)
     # Allow any geometry type instead of only LINESTRING:

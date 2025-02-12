@@ -92,6 +92,7 @@ class Database:
             seg_obj = F_SimulationSegment(
                 task_id=seg["task_id"],
                 city_id=seg["city_id"],
+                connectivity=seg["connectivity"],
                 prune_index=seg["prune_index"],
                 quantile=seg["quantile"],
                 geometry=seg["geometry"]
