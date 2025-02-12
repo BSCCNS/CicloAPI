@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid, F_SimulationCityMetrics
 from sqlalchemy.orm import Session
 import logging
 
@@ -129,7 +129,51 @@ class Database:
         self.session.commit()
         logger.info(f"Inserted {len(node_objects)} simulation nodes.")
         return node_objects
+    
 
+    def insert_simulation_city_metrics(self, metrics_data):
+        """
+        Inserts F_SimulationCityMetrics objects into the database.
+
+        :param metrics_data: List of dictionaries with keys:
+                            'task_id', 'city_id', 'is_base', 'network_type',
+                            'length', 'length_lcc', 'coverage',
+                            'directness', 'directness_lcc', 'poi_coverage', 'components',
+                            'efficiency_global', 'efficiency_local',
+                            'efficiency_global_routed', 'efficiency_local_routed',
+                            'directness_lcc_linkwise', 'directness_all_linkwise'
+        :return: List of inserted F_SimulationCityMetrics objects.
+        """
+
+        metrics_objects = []
+        for data in metrics_data:
+            metric_obj = F_SimulationCityMetrics(
+                task_id=data['task_id'],
+                city_id=data['city_id'],
+                is_base=data.get('is_base'),
+                prune_index = data.get('prune_index'),
+                network_type=data.get('network_type'),
+                length=data.get('length'),
+                length_lcc=data.get('length_lcc'),
+                coverage=data.get('coverage'),
+                directness=data.get('directness'),
+                directness_lcc=data.get('directness_lcc'),
+                poi_coverage=data.get('poi_coverage'),
+                components=data.get('components'),
+                efficiency_global=data.get('efficiency_global'),
+                efficiency_local=data.get('efficiency_local'),
+                efficiency_global_routed=data.get('efficiency_global_routed'),
+                efficiency_local_routed=data.get('efficiency_local_routed'),
+                directness_lcc_linkwise=data.get('directness_lcc_linkwise'),
+                directness_all_linkwise=data.get('directness_all_linkwise')
+            )
+            metrics_objects.append(metric_obj)
+
+        self.session.bulk_save_objects(metrics_objects)
+        self.session.commit()
+        logger.info(f"Inserted {len(metrics_objects)} simulation city metrics records.")
+        return metrics_objects
+    
 Base.metadata.create_all(bind=engine)
 
 

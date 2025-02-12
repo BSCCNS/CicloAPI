@@ -32,6 +32,10 @@ from cicloapi.backend.models.parameters.parameters import (
     numnodepairs,
 )
 
+
+from cicloapi.database.database_models import SessionLocal
+from cicloapi.database.db_methods import Database
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -61,6 +65,9 @@ def main(
     Returns:
     None
     """
+    session = SessionLocal()
+    database = Database(session)
+
     warnings.filterwarnings("ignore")
     rerun_existing = True
     path_output = Path(PATH["task_output"])
@@ -218,6 +225,39 @@ def main(
         write_result(
             path_output, task_id, output_MST, "geojson", placeid, "", "mst.geojson"
         )
+
+        print(output)
+
+        metrics_data = []
+        n = len(prune_index)  # number of records
+        for i in range(n):
+            metric_item = {
+            "task_id": task_id,
+            "city_id": placeid,
+            "is_base": False,  
+            "prune_index": prune_index[i],  # or use i if different prunes for each index
+            "network_type": networktype,
+            "length": float(output["length"][i]),
+            "length_lcc": float(output["length_lcc"][i]),
+            "coverage": float(output["coverage"][i]),
+            "directness": float(output["directness"][i]),
+            "directness_lcc": float(output["directness_lcc"][i]),
+            "poi_coverage": output["poi_coverage"][i],
+            "components": output["components"][i],
+            "efficiency_global": float(output["efficiency_global"][i]),
+            "efficiency_local": float(output["efficiency_local"][i]),
+            "efficiency_global_routed": float(output["efficiency_global_routed"][i]),
+            "efficiency_local_routed": float(output["efficiency_local_routed"][i]),
+            "directness_lcc_linkwise": float(output["directness_lcc_linkwise"][i]),
+            "directness_all_linkwise": float(output["directness_all_linkwise"][i]),
+            }
+            metrics_data.append(metric_item)
+
+        # Insert records into the database
+        try:
+            Database.insert_simulation_city_metrics(database, metrics_data)
+        except Exception as e:
+            logger.exception("Error inserting pruned simulation city metrics")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import Column, Integer, Text, Float, UniqueConstraint
+from sqlalchemy import Column, Integer, Text, Float, UniqueConstraint, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geometry
 
@@ -63,3 +63,28 @@ class F_SimulationCentroid(Base):
     weighted_point_count = Column(Float, nullable=False)
     cluster = Column(Integer, nullable=False)
     geometry = Column(Geometry(geometry_type="GEOMETRY", srid=4326), nullable=False)
+
+class F_SimulationCityMetrics(Base):
+    __tablename__ = "f_simulation_city_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(UUID(as_uuid=False), nullable=False)
+    city_id = Column(Text, nullable=False)
+    is_base = Column(Boolean, default=True, nullable=False)
+    prune_index = Column(Integer, nullable=False)
+    
+    network_type = Column(Text, nullable=True)  # e.g., "biketrack", "carall", etc.
+
+    length = Column(Float, nullable=True)
+    length_lcc = Column(Float, nullable=True)
+    coverage = Column(Float, nullable=True)
+    directness = Column(Float, nullable=True)
+    directness_lcc = Column(Float, nullable=True)
+    poi_coverage = Column(Integer, nullable=True)
+    components = Column(Integer, nullable=True)
+    efficiency_global = Column(Float, nullable=True)
+    efficiency_local = Column(Float, nullable=True)
+    efficiency_global_routed = Column(Float, nullable=True)
+    efficiency_local_routed = Column(Float, nullable=True)
+    directness_lcc_linkwise = Column(Float, nullable=True)
+    directness_all_linkwise = Column(Float, nullable=True)
