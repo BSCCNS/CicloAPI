@@ -51,3 +51,15 @@ class F_SimulationSegment(Base):
     quantile = Column(Float, nullable=False)
     # Allow any geometry type instead of only LINESTRING:
     geometry = Column(Geometry(geometry_type="GEOMETRY", srid=4326), nullable=True)
+
+
+class F_SimulationCentroid(Base):
+    __tablename__ = "f_simulation_nodes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    hex_id = Column(Text, nullable=False)
+    task_id = Column(UUID(as_uuid=False), nullable=False)
+    city_id = Column(Text, nullable=False)
+    weighted_point_count = Column(Float, nullable=False)
+    cluster = Column(Integer, nullable=False)
+    geometry = Column(Geometry(geometry_type="GEOMETRY", srid=4326), nullable=False)

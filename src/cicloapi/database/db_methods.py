@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid
 from sqlalchemy.orm import Session
 import logging
 
@@ -102,6 +102,33 @@ class Database:
         self.session.commit()
         logger.info(f"Inserted {len(segment_objects)} simulation segments.")
         return segment_objects
+    
+    def insert_simulation_nodes(self, node_data):
+        """
+        Inserts F_SimulationCentroid objects (simulation nodes) into the database.
+
+        :param node_data: List of dictionaries with keys:
+                        'hex_id', 'task_id', 'city_id', 
+                        'weighted_point_count', 'cluster', 'geometry'
+        :return: List of inserted F_SimulationCentroid objects.
+        """
+
+        node_objects = []
+        for data in node_data:
+            node_obj = F_SimulationCentroid(
+                hex_id=data['hex_id'],
+                task_id=data['task_id'],
+                city_id=data['city_id'],
+                weighted_point_count=data['weighted_point_count'],
+                cluster=data['cluster'],
+                geometry=data['geometry']
+            )
+            node_objects.append(node_obj)
+
+        self.session.bulk_save_objects(node_objects)
+        self.session.commit()
+        logger.info(f"Inserted {len(node_objects)} simulation nodes.")
+        return node_objects
 
 Base.metadata.create_all(bind=engine)
 
