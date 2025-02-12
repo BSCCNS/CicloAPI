@@ -28,10 +28,11 @@ from cicloapi.backend.models.scripts.functions import (
 )
 from cicloapi.backend.models.parameters.parameters import poiparameters, snapthreshold
 
-from cicloapi.database.db_methods import create_connection, Database
+from cicloapi.database.database_models import SessionLocal
+from cicloapi.database.db_methods import Database
 
 
-def main(PATH, cities):
+def main(PATH, task_id, cities):
     """
     Main function to prepare Points of Interest (POIs) for given cities.
 
@@ -56,9 +57,9 @@ def main(PATH, cities):
     Raises:
         Exception: If any error occurs during the processing of POIs.
     """
-    connection = create_connection()
-    database = Database(connection)
-    pois = []
+    session = SessionLocal()
+    database = Database(session)
+    pois = {}
 
     # Load all carall graphs in OSMNX format
     G_caralls = {}
@@ -154,23 +155,29 @@ def main(PATH, cities):
                 if debug:
                     gdf.plot(color="red")
 
+                # Transform geometry to WKT
+                gdf["geometry"] = gdf["geometry"].apply(lambda geom: geom.wkt)
+
                 # Prepare POI data for database insertion
-                for _, row in gdf.iterrows():
-                    pois.append((
-                        placeid,  # city_id
-                        row.get("name", None),
-                        poitag,
-                        row.to_json(),
-                        row["geometry"].wkt
-                    ))
+                for idx, (_, row) in enumerate(gdf.iterrows()):
+                    key = f"{task_id}_{placeid}_{poiid}_{idx}"
+                    pois[key] = {
+                        "task_id": task_id,
+                        "city_id": placeid,
+                        "name": row.get("name", None),
+                        "poi_category": str(poiid),
+                        "geometry": row.get("geometry", None)
+                    }
+            except Exception as e:
+                print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
             except Exception as e:
                 print(f"No {poiid} in {placeinfo}. No POIs created. Error: {e}")
 
     # Insert POIs into the database
-    database.insert_pois(pois)
+    Database.insert_pois(session,pois)
 
-    connection.close()
+    session.close()
 
 if __name__ == "__main__":
     main()

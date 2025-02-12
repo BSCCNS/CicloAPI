@@ -23,6 +23,8 @@ class InputData(InputCity):
         "transporte": 2.0,
     }
     buffer_walk_distance: int = 500
+    connectivity: str = "GTs"
+
 
 
 class InputResults(InputCity):

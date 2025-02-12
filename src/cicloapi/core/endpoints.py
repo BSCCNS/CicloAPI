@@ -29,6 +29,8 @@ from cicloapi.backend.models.scripts import (
     real_city_metrics,
 )
 from cicloapi.backend.models.parameters.parameters import snapthreshold
+from cicloapi.database.db_methods import Database
+from cicloapi.database.database_models import SessionLocal
 
 current_working_directory = os.getcwd()
 
@@ -69,18 +71,21 @@ async def city_setup(input: schemas.InputCity):
         for key in input.city.keys():
             placepath = PATH[subfolder] / key
             placepath.mkdir(parents=True, exist_ok=True)
-            print(f"Successfully created folder {placepath}")
+            #print(f"Successfully created folder {placepath}")
 
     async def setup_task(task_id):
+
+        # Create a SQLAlchemy session from SessionLocal
+        session = SessionLocal()
+
         try:
-            # Extract parameters
-            PATH = path.PATH
-            # Execute workflow
+            database = Database(session)
+
             logger.info("Running - Preparing networks")
             await asyncio.to_thread(prepare_networks.main, PATH, input.city)  # Runs first
 
             logger.info("Running - Preparing POIs")
-            await asyncio.to_thread(prepare_pois.main, PATH, input.city)
+            await asyncio.to_thread(prepare_pois.main, PATH, task_id, input.city)
 
             logger.info(f"Run with task ID: {task_id} finished")
         except asyncio.CancelledError:
@@ -105,24 +110,40 @@ async def city_setup(input: schemas.InputCity):
 #######################
 
 
-# Endpoint to run the task
 @router.post("/run", summary="Compute an extension of the bicycle network.")
 async def run_model(input: schemas.InputData):
     """
     Starts execution of a model task.
     """
-
     task_id = str(uuid.uuid4())  # Generate a unique ID for the task
     logger.info(f"Starting run with task ID: {task_id}")
 
+    session = SessionLocal()
+    database = Database(session)
+
+    sliders = input.sliders
+    simulation_data = {
+        "task_id": task_id,
+        "prune_measure": input.prune_measure,
+        "prune_quantiles": input.prune_quantiles,
+        "h3_zoom": input.h3_zoom,
+        "sanidad": sliders["sanidad"],
+        "educacion": sliders["educacion"],
+        "administracion": sliders["administracion"],
+        "aprovisionamiento": sliders["aprovisionamiento"],
+        "cultura": sliders["cultura"],
+        "deporte": sliders["deporte"],
+        "transporte": sliders["transporte"],
+        "buffer_walk_distance": input.buffer_walk_distance
+    }
+    Database.insert_simulation_task(database, simulation_data)
+
     async def model_task(task_id):
         try:
-            # Extract parameters
             PATH = path.PATH
-            sliders = input.sliders
-
             logger.info("Running - Clustering POIs")
-            await asyncio.to_thread(cluster_pois.main,
+            await asyncio.to_thread(
+                cluster_pois.main,
                 PATH,
                 task_id,
                 input.city,
@@ -137,7 +158,7 @@ async def run_model(input: schemas.InputData):
                 sliders["transporte"],
             )
 
-            await asyncio.to_thread(poi_based_generation.main, PATH, task_id, input.city, input.prune_measure)
+            await asyncio.to_thread(poi_based_generation.main, PATH, task_id, input.city, input.prune_measure, input.connectivity)
 
             logger.info(f"Run with task ID: {task_id} finished")
             tasks[task_id].status = 'Completed'
@@ -147,12 +168,13 @@ async def run_model(input: schemas.InputData):
 
     time = str(datetime.datetime.now())
     task = asyncio.create_task(model_task(task_id))
-    task_ob = schemas.PruneTask(task=task, 
-                                start_time=time,
-                                type = 'Model_task',
-                                city = input.city,
-                                prune_measure = input.prune_measure
-                                )
+    task_ob = schemas.PruneTask(
+        task=task, 
+        start_time=time,
+        type='Model_task',
+        city=input.city,
+        prune_measure=input.prune_measure
+    )
     tasks[task_id] = task_ob
     task.add_done_callback(lambda t: after_task_done(t, task_id))
     return {"task_id": task_id}
