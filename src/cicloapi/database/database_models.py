@@ -9,6 +9,11 @@ DATABASE_URL = "postgresql://roger:rogerbsc@localhost:5433/CICLOAPI"
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+DATABASE_URL = "postgresql://roger:rogerbsc@localhost:5433/CICLOAPI"
+
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 class F_SimulationTasks(Base):
     __tablename__ = "f_simulation_tasks"
@@ -84,4 +89,16 @@ class F_SimulationCityMetrics(Base):
     
     __table_args__ = (
         Index("ix_simulation_city_metrics_task_city", "task_id", "city_id"),
+    )
+
+class City(Base):
+    __tablename__ = "m_cities"
+    db_cty_id = Column(Integer, primary_key=True, autoincrement=True)
+    placeid = Column(Text, nullable=False, unique=True)
+    nominatimstring = Column(Text, nullable=False)
+    countryid = Column(Text, nullable=True)
+    name = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_m_cities_placeid", "placeid", unique=True),
     )

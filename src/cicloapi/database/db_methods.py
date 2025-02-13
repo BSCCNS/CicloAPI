@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid, F_SimulationCityMetrics
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid, F_SimulationCityMetrics, City
 from sqlalchemy.orm import Session
 import logging
 
@@ -15,6 +15,25 @@ class Database:
         if not session:
             raise DatabaseConnectionError('Error connecting to the database.')
         self.session = session
+
+
+    def insert_city(self, city_data: dict):
+        # Check if the city already exists
+        existing = self.session.query(City).filter_by(placeid=city_data["placeid"]).first()
+        if existing:
+            logger.info(f"City with id {city_data['placeid']} already exists. Skipping insertion.")
+            return existing
+
+        new_city = City(
+            placeid=city_data["placeid"],
+            nominatimstring=city_data["nominatimstring"],
+            countryid=city_data["countryid"],
+            name=city_data["name"]
+        )
+        self.session.add(new_city)
+        self.session.commit()
+        logger.info(f'Inserted city with id {city_data["placeid"]}.')
+        return new_city
 
 
     def insert_pois(session: Session, poi_data: dict):
