@@ -650,6 +650,7 @@ def convert_to_h3(location, h3_zoom):
 
     # Convert the original geometries to H3 hexagons
     gdf_hex = h3fy(gdf, resolution=h3_zoom)
+    print(gdf_hex)
 
     # Intersect the H3 hexagons with the original geometries
     gdf_hex["geometry"] = gdf_hex.geometry.apply(

@@ -51,6 +51,8 @@ from cicloapi.backend.models.parameters.parameters import (
     transporte,
 )
 
+from cicloapi.database.database_models import SessionLocal
+from cicloapi.database.db_methods import Database
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -143,6 +145,9 @@ def main(
             transporte_slider=1.0
         )
     """
+    session = SessionLocal()
+    database = Database(session)
+
 
     # Your loop and logic with logger
     for placeid, placeinfo in tqdm(cities.items(), desc="Cities"):
@@ -184,6 +189,7 @@ def main(
                 continue  # Skip to the next city if there is an error
 
         gdf_hex = convert_to_h3(location, h3_zoom)
+        print(gdf_hex)
 
         # Example categories definition as a dictionary
         categories = {
@@ -285,7 +291,7 @@ def main(
 
             # Create the final dataframe keeping centroids and exemplar labels
             gdf_hex = gdf_hex[
-                [
+                [   "hex_id",
                     "geometry",
                     "centroid",
                     "weighted_point_count",
@@ -324,6 +330,23 @@ def main(
                 geometry="centroid",
                 crs="EPSG:4326",
             )
+            gdf["db_centroid"] = gdf["centroid"].apply(lambda geom: geom.wkt)
+            # Create a list to store node data into database
+            node_data = []
+            for idx, row in gdf.iterrows():
+                node_data.append({
+                    "hex_id": row["hex_id"],
+                    "task_id": task_id,
+                    "city_id": placeid,
+                    "weighted_point_count": row["weighted_point_count"],
+                    "cluster": row["cluster"],
+                    "geometry": row["db_centroid"],  # geometry column is the centroid as defined 
+                })
+
+
+             # assumes DBMethods sets up the session
+            Database.insert_simulation_nodes(database,node_data)
+
             G_carall = G_caralls[placeid]
 
             # Snap points to the nearest nodes in the network

@@ -1,4 +1,4 @@
-from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment
+from cicloapi.database.database_models import Base, engine, F_POI, F_SimulationTasks, F_SimulationSegment, F_SimulationCentroid, F_SimulationCityMetrics, City
 from sqlalchemy.orm import Session
 import logging
 
@@ -15,6 +15,25 @@ class Database:
         if not session:
             raise DatabaseConnectionError('Error connecting to the database.')
         self.session = session
+
+
+    def insert_city(self, city_data: dict):
+        # Check if the city already exists
+        existing = self.session.query(City).filter_by(placeid=city_data["placeid"]).first()
+        if existing:
+            logger.info(f"City with id {city_data['placeid']} already exists. Skipping insertion.")
+            return existing
+
+        new_city = City(
+            placeid=city_data["placeid"],
+            nominatimstring=city_data["nominatimstring"],
+            countryid=city_data["countryid"],
+            name=city_data["name"]
+        )
+        self.session.add(new_city)
+        self.session.commit()
+        logger.info(f'Inserted city with id {city_data["placeid"]}.')
+        return new_city
 
 
     def insert_pois(session: Session, poi_data: dict):
@@ -102,7 +121,78 @@ class Database:
         self.session.commit()
         logger.info(f"Inserted {len(segment_objects)} simulation segments.")
         return segment_objects
+    
+    def insert_simulation_nodes(self, node_data):
+        """
+        Inserts F_SimulationCentroid objects (simulation nodes) into the database.
 
+        :param node_data: List of dictionaries with keys:
+                        'hex_id', 'task_id', 'city_id', 
+                        'weighted_point_count', 'cluster', 'geometry'
+        :return: List of inserted F_SimulationCentroid objects.
+        """
+
+        node_objects = []
+        for data in node_data:
+            node_obj = F_SimulationCentroid(
+                hex_id=data['hex_id'],
+                task_id=data['task_id'],
+                city_id=data['city_id'],
+                weighted_point_count=data['weighted_point_count'],
+                cluster=data['cluster'],
+                geometry=data['geometry']
+            )
+            node_objects.append(node_obj)
+
+        self.session.bulk_save_objects(node_objects)
+        self.session.commit()
+        logger.info(f"Inserted {len(node_objects)} simulation nodes.")
+        return node_objects
+    
+
+    def insert_simulation_city_metrics(self, metrics_data):
+        """
+        Inserts F_SimulationCityMetrics objects into the database.
+
+        :param metrics_data: List of dictionaries with keys:
+                            'task_id', 'city_id', 'is_base', 'network_type',
+                            'length', 'length_lcc', 'coverage',
+                            'directness', 'directness_lcc', 'poi_coverage', 'components',
+                            'efficiency_global', 'efficiency_local',
+                            'efficiency_global_routed', 'efficiency_local_routed',
+                            'directness_lcc_linkwise', 'directness_all_linkwise'
+        :return: List of inserted F_SimulationCityMetrics objects.
+        """
+
+        metrics_objects = []
+        for data in metrics_data:
+            metric_obj = F_SimulationCityMetrics(
+                task_id=data['task_id'],
+                city_id=data['city_id'],
+                is_base=data.get('is_base'),
+                prune_index = data.get('prune_index'),
+                network_type=data.get('network_type'),
+                length=data.get('length'),
+                length_lcc=data.get('length_lcc'),
+                coverage=data.get('coverage'),
+                directness=data.get('directness'),
+                directness_lcc=data.get('directness_lcc'),
+                poi_coverage=data.get('poi_coverage'),
+                components=data.get('components'),
+                efficiency_global=data.get('efficiency_global'),
+                efficiency_local=data.get('efficiency_local'),
+                efficiency_global_routed=data.get('efficiency_global_routed'),
+                efficiency_local_routed=data.get('efficiency_local_routed'),
+                directness_lcc_linkwise=data.get('directness_lcc_linkwise'),
+                directness_all_linkwise=data.get('directness_all_linkwise')
+            )
+            metrics_objects.append(metric_obj)
+
+        self.session.bulk_save_objects(metrics_objects)
+        self.session.commit()
+        logger.info(f"Inserted {len(metrics_objects)} simulation city metrics records.")
+        return metrics_objects
+    
 Base.metadata.create_all(bind=engine)
 
 

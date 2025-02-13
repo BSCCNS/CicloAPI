@@ -59,6 +59,9 @@ async def city_setup(input: schemas.InputCity):
     logger.info(f"Starting run with task ID: {task_id}")
 
     PATH = path.PATH
+    session = SessionLocal()
+    database = Database(session)
+
     for subfolder in [
         "data",
         "plots",
@@ -72,14 +75,28 @@ async def city_setup(input: schemas.InputCity):
             placepath = PATH[subfolder] / key
             placepath.mkdir(parents=True, exist_ok=True)
             #print(f"Successfully created folder {placepath}")
+    
+        inserted = []
+        for city_key, details in input.city.items():
+            # Construct city_data expected by Database.insert_city
+            city_data = {          
+                "placeid": city_key,            
+                "nominatimstring": details["nominatimstring"],
+                "countryid": "",                
+                "name": city_key.capitalize()   
+            }
+            inserted_city = database.insert_city(city_data)
+            inserted.append({"placeid": inserted_city.placeid})
+            logger.info(f"Inserted city: {inserted_city.placeid}")
+
+            return {"inserted_cities": inserted}
+
 
     async def setup_task(task_id):
 
         # Create a SQLAlchemy session from SessionLocal
-        session = SessionLocal()
 
         try:
-            database = Database(session)
 
             logger.info("Running - Preparing networks")
             await asyncio.to_thread(prepare_networks.main, PATH, input.city)  # Runs first
@@ -255,7 +272,7 @@ async def run_analysis(input: schemas.InputResults):
             cities = input.city
 
             logger.info("Running - Analyzing Metrics")
-            await asyncio.to_thread(analyze_results.main, PATH, input.task_id, cities, prune_index=input.phase)
+            await asyncio.to_thread(analyze_results.main, PATH, input.task_id, cities, prune_index=input.expansion_index)
 
 
             logger.info(f"Analysis with task ID: {task_id} finished")

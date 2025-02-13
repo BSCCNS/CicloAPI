@@ -33,6 +33,9 @@ from cicloapi.backend.models.parameters.parameters import (
     numnodepairs,
 )
 
+from cicloapi.database.database_models import SessionLocal
+from cicloapi.database.db_methods import Database
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -59,6 +62,8 @@ def main(
     Returns:
     None
     """
+    session = SessionLocal()
+    database = Database(session)
     warnings.filterwarnings("ignore")
     rerun_existing = True
     path_output = Path(PATH["task_output"])
@@ -119,11 +124,15 @@ def main(
 
             # Load POIs
             logger.info(f"{placeid}: Loading POIs")
-
-            with open(
-                Path(path_output) / task_id / f"{placeid}_nnids_sliders.csv"
-            ) as f:
-                nnids = [int(line.rstrip()) for line in f]
+            file_path = Path(path_output) / task_id / f"{placeid}_nnids_sliders.csv"
+            if not file_path.is_file():
+                logger.error(
+                    f"{placeid}: File {file_path} does not exist. There are no models with task id {task_id}."
+                )
+                nnids = []
+            else:
+                with open(file_path) as f:
+                    nnids = [int(line.rstrip()) for line in f]
 
             # Metrics calculation
             covs = {}
@@ -170,6 +179,44 @@ def main(
                 empty_metrics,
             )
 
+                # output_place is a dict with keys as network types and their metrics as dict values.
+
+        def convert_value(val):
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return val
+
+        metrics_data = []
+        for network_type, metrics in output_place.items():
+            metric_item = {
+                "task_id": task_id,
+                "city_id": placeid,
+                "is_base": True,  
+                "prune_index": int(-1),
+                "network_type": network_type,
+                "length": float(metrics.get("length")),
+                "length_lcc": float(metrics.get("length_lcc")),
+                "coverage": float(metrics.get("coverage")),
+                "directness": float(metrics.get("directness")),
+                "directness_lcc": float(metrics.get("directness_lcc")),
+                "poi_coverage": metrics.get("poi_coverage"),
+                "components": metrics.get("components"),
+                "efficiency_global": float(metrics.get("efficiency_global")),
+                "efficiency_local": float(metrics.get("efficiency_local")),
+                "efficiency_global_routed": float(metrics.get("efficiency_global_routed")),
+                "efficiency_local_routed": float(metrics.get("efficiency_local_routed")),
+                "directness_lcc_linkwise": float(metrics.get("directness_lcc_linkwise")),
+                "directness_all_linkwise": float(metrics.get("directness_all_linkwise")),
+            }
+            metrics_data.append(metric_item)
+
+
+         # Ensure your DBMethods is properly initialized
+        Database.insert_simulation_city_metrics(database,metrics_data)
+
+
+    session.close()
 
 if __name__ == "__main__":
     main()
