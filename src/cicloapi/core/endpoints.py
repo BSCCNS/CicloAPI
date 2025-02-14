@@ -89,12 +89,8 @@ async def city_setup(input: schemas.InputCity):
             inserted.append({"placeid": inserted_city.placeid})
             logger.info(f"Inserted city: {inserted_city.placeid}")
 
-            return {"inserted_cities": inserted}
-
 
     async def setup_task(task_id):
-
-        # Create a SQLAlchemy session from SessionLocal
 
         try:
 
@@ -105,6 +101,7 @@ async def city_setup(input: schemas.InputCity):
             await asyncio.to_thread(prepare_pois.main, PATH, task_id, input.city)
 
             logger.info(f"Run with task ID: {task_id} finished")
+
         except asyncio.CancelledError:
             logger.info(f"Run with task ID: {task_id} cancelled")
             raise  # Propagate the cancellation exception
