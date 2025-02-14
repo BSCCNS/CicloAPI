@@ -281,7 +281,7 @@ def main(
             features = scaler.fit_transform(np.hstack([centroids, point_counts]))
 
             # Apply Affinity Propagation
-            ap = AffinityPropagation(random_state=42).fit(features)
+            ap = AffinityPropagation(random_state=42, damping = 0.8, max_iter=10000).fit(features)
             gdf_hex["cluster"] = ap.labels_  # Assign cluster labels to hexagons
 
             # Identify exemplars and create exemplar label
