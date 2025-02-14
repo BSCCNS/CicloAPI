@@ -280,14 +280,18 @@ def main(
             scaler = StandardScaler()
             features = scaler.fit_transform(np.hstack([centroids, point_counts]))
 
-            # Apply Affinity Propagation
-            ap = AffinityPropagation(random_state=42, damping = 0.8, max_iter=10000).fit(features)
+            ap = AffinityPropagation(random_state=42, damping=0.8, max_iter=10000).fit(features)
             gdf_hex["cluster"] = ap.labels_  # Assign cluster labels to hexagons
 
             # Identify exemplars and create exemplar label
             exemplars_indices = ap.cluster_centers_indices_
             gdf_hex["is_exemplar"] = 0  # Initialize all hexagons as non-exemplars
             gdf_hex.loc[exemplars_indices, "is_exemplar"] = 1  # Mark exemplars
+
+            # Ensure hexagons with a zero weighted count are not exemplars
+            gdf_hex.loc[gdf_hex["weighted_point_count"] == 0, "is_exemplar"] = 0
+            
+
 
             # Create the final dataframe keeping centroids and exemplar labels
             gdf_hex = gdf_hex[
