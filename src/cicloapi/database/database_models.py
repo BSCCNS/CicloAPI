@@ -9,11 +9,6 @@ DATABASE_URL = "postgresql://roger:rogerbsc@localhost:5433/CICLOAPI"
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-DATABASE_URL = "postgresql://roger:rogerbsc@localhost:5433/CICLOAPI"
-
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 class F_SimulationTasks(Base):
     __tablename__ = "f_simulation_tasks"
@@ -34,11 +29,11 @@ class F_SimulationTasks(Base):
 class F_POI(Base):
     __tablename__ = "f_poi"
     poi_id = Column(Integer, primary_key=True, autoincrement=True)
-    task_id = Column(UUID(as_uuid=False), ForeignKey("f_simulation_tasks.task_id"), index=True)
+    setup_task_id = Column(UUID(as_uuid=False), index=True)
     city_id = Column(Text, nullable=False, index=True)
     name = Column(Text, nullable=True)
     poi_category = Column(Text, nullable=True)
-    geometry = Column(Geometry(geometry_type="POINT", srid=4326), nullable=True)
+    geometry = Column(Geometry(geometry_type="GEOMETRY", srid=4326), nullable=True)
 
 class F_SimulationSegment(Base):
     __tablename__ = "f_simulation_edges"
